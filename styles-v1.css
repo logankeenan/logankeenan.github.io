@@ -4,3 +4,9 @@ body {
     color: #000000;
     max-width: 768px;
 }
+
+@media (max-width: 768px) {
+    body {
+        margin: 4rem 20px;
+    }
+}
