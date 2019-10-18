@@ -25,7 +25,7 @@
         <section>
             <h2>Defining the Model and adding a Profile Picture</h2>
     <p>
-        Scaffold out the model
+        Scaffold out the model.
     </p>
     <pre>
             <code>
@@ -33,7 +33,7 @@
             </code>
         </pre>
     <p>
-        Update the model/profile.rb to include a profile picture
+        Update the model/profile.rb to include a profile picture.
     </p>
     <pre>
             <code class="ruby">
@@ -43,7 +43,7 @@
             </code>
         </pre>
 
-    <p>Update the views/profiles/_form.html.erb to include a input for the profile picture </p>
+    <p>Update the views/profiles/_form.html.erb to include a input for the profile picture. </p>
     <pre>
             <code class="erb">
     &lt;div class=&quot;field&quot;&gt;
@@ -53,7 +53,7 @@
             </code>
         </pre>
     <p>
-        Update the controllers/profile_controller.rb to allow for the profile_picture params
+        Update the controllers/profile_controller.rb to allow for the profile_picture params.
     </p>
     <pre>
             <code class="ruby">
@@ -64,9 +64,9 @@
         </pre>
 </section>
 <section>
-    <h2>Setting up integration tests</h2>
+    <h2>Setting up Integration Tests</h2>
     <p>
-        Add the integration test settings to test_helper.rb
+        Add the integration test settings to test_helper.rb.
     </p>
     <pre>
         <code class="ruby">
@@ -126,9 +126,9 @@
         </pre>
 </section>
 <section>
-    <h2>Remove an existing profile picture</h2>
+    <h2>Remove an Existing Profile Picture</h2>
     <p>
-        Add a fixture to test/fixtures/profile.yml to represent the profile
+        Add a fixture to test/fixtures/profile.yml to represent the profile.
     </p>
     <pre>
             <code class="ruby">
@@ -158,7 +158,7 @@
     end
             </code>
         </pre>
-    <p>Update the form to show the remove profile picture checkbox</p>
+    <p>Update the form to show the remove profile picture checkbox, but only if a picture is attached.</p>
     <pre>
             <code class="erb">
     <% if profile.profile_picture.attached? %>
@@ -182,7 +182,7 @@
     end
             </code>
         </pre>
-    <p>Add the integration test to remove the profile picture</p>
+    <p>Add the integration test to remove the profile picture.</p>
     <pre>
             <code class="ruby">
     test 'that a profile picture can be removed ' do
