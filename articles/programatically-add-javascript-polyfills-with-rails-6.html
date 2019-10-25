@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description"
+          content="Programmatically add Javascript Polyfills with Rails 6 to prevent loading unneeded javascript files.">
+    <title>Programmatically Add Javascript Polyfills with Rails 6</title>
+    <link rel="stylesheet" href="../styles-v1.css"/>
+    <link rel="stylesheet" href="../styles/highlight-js-a11y-dark.css">
+</head>
+<body>
+<nav>
+    <a href="/">Home</a>
+</nav>
+<section>
+    <h1>
+        Programmatically Add Javascript Polyfills with Rails 6
+    </h1>
+    <p>
+        Including polyfills in the application.js file punishes users which the most update-to-date browsers.
+        Programmatically fetching polyfills allows the application.js file to be as small as possible; reducing parse
+        and execution times of Javascript.
+    </p>
+</section>
+
+<section>
+    <h2>
+        Including the Polyfills as packs.
+    </h2>
+    <p>
+        In this example, where going to setup polyfills for Promise and window.fetch. We'll start by adding a polyfill
+        from npm.
+    </p>
+    <pre>
+        <code class="shell hljs">
+$ yarn add whatwg-fetch promise-polyfill
+        </code>
+    </pre>
+    <p>
+        Create a pack for the promise polyfill at /app/javascript/packs/polyfills/promise.js
+    </p>
+    <pre>
+        <code class="javascript hljs">
+import 'promise-polyfill/src/polyfill'
+        </code>
+    </pre>
+
+    <p>
+        Create a pack for the fetch polyfill at /app/javascript/packs/polyfills/fetch.js
+    </p>
+    <pre>
+        <code class="javascript hljs">
+import 'whatwg-fetch'
+        </code>
+    </pre>
+</section>
+<section>
+    <h2>
+        Adding the polyfills to the application.html.erb file
+    </h2>
+    <p>
+        For most cases, the polyfills need to be loaded above the application.js file because it might need to use them
+        during application.js execution. We'll create a script that will be executed as the page is loaded and if a
+        polyfill does not exist then it'll add the appropriate polyfill script file. The polyfill will be
+        downloaded, parsed, and executed before the application.js.
+    </p>
+    <pre>
+        <code class="erb hljs">
+&lt;head&gt;
+    &lt;!-- other head content --&gt;
+
+    &lt;script&gt;
+        window.fetch || document.write('&lt;script src=&quot;&lt;%= asset_pack_path('polyfills/fetch.js') %&gt;&quot;&gt;&lt;\/script&gt;');
+        window.Promise || document.write('&lt;script src=&quot;&lt;%= asset_pack_path('polyfills/promise.js') %&gt;&quot;&gt;&lt;\/script&gt;');
+    &lt;/script&gt;
+    <%= javascript_pack_tag 'application', 'data-turbolinks-track': 'reload' %>
+
+    &lt;!-- other head content --&gt;
+&lt;/head&gt;
+        </code>
+    </pre>
+</section>
+<a href="https://github.com/logankeenan/programmatically-add-javascript-polyfills-rails-6">Source Code</a>
+</body>
+<script src="../scripts/highlight-erb-javascript-shell.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+</html>
