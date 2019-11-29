@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description"
+          content="Running a Rust Web Server with Actix web and Handlebar templates">
+    <link rel="stylesheet" href="../styles-v3.css"/>
+    <link rel="stylesheet" href="../styles/highlight-js-a11y-dark.css">
+    <title>Logan Keenan - Running a Rust Web Server</title>
+</head>
+<body>
+<nav>
+    <a href="/">Home</a>
+</nav>
+<section>
+    <h1>
+        Running a Rust Web Server
+    </h1>
+    <time datetime="2019-10-17">
+        October 29, 2019
+    </time>
+    <p>
+        The first thing I want to do is get a web server running with Rust. I'm going to walk through installing rust,
+        creating a new project, using an Actix-Web server, and finally using some handlebar templates to render some
+        HTML.
+    </p>
+</section>
+<section>
+    <h2>
+        Installing and Running some Rust
+    </h2>
+    <p>
+        First, the <a href="https://rustup.rs/">rustup </a> toolchain manager needs to be installed. Rustup is to rust
+        as rvm/rbenv is to
+        Ruby, nvm to Node, etc... Run the command below and it'll also install the latest stable version of rust on your
+        machine
+    </p>
+    <pre>
+        <code class="shell">
+$ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+        </code>
+    </pre>
+    <p>
+        Afterwards, you should be able to check the version of rust and cargo installed on your machine. Cargo is
+        the package manager; think of it like npm, gem, etc...
+    </p>
+    <pre>
+        <code class="shell">
+$ rustc --version
+rustc 1.39.0 (4560ea788 2019-11-04)
+$ cargo --version
+cargo 1.39.0 (1c6ec66d5 2019-09-30)
+        </code>
+    </pre>
+</section>
+<section>
+    <h2>
+        Creating your first Rust Program
+    </h2>
+    <p>
+        Create a new directory for your project. In this case, we'll create a directory called
+        "running-a-rust-web-server". Change into the directory and run "cargo init". This will create the basic files
+        needed for a rust app. Plenty of resources exist that go into detail about what initially gets
+        created, so I wont do that here. Next, run the application with "cargo run" and view it's output.
+    </p>
+    <pre>
+        <code class="shell">
+$ mkdir running-a-rust-web-server
+$ cd running-a-rust-web-server
+$ cargo init
+Created binary (application) package
+$ cargo run
+Hello, world!
+        </code>
+    </pre>
+</section>
+<section>
+    <h2>Creating a Web Server</h2>
+    <p>
+        Rust has a few different web frameworks to choose from which can be viewed
+        <a target="_blank" href="https://www.arewewebyet.org/topics/frameworks/">here</a>. We're going to use Actix-Web.
+        Open the Cargo.toml file and add Actix-Web. It should look similar to the file below
+    </p>
+    <pre>
+        <code class="toml">
+[package]
+name = "running-a-rust-web-server"
+version = "0.1.0"
+authors = ["Logan Keenan"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+actix-web = "1.0.9"
+        </code>
+    </pre>
+    <p>
+        You can install your projects dependencies with "cargo fetch". Cargo will also install
+        dependencies when you build (cargo build). Note for javascript devs, dependencies are not download at a project
+        level. They are downloaded once per version of rust. Once dependencies have been fetched then a Cargo.lock file
+        is updated automatically.
+    </p>
+    <p>
+        Actix-Web has made it super easy to get started. There <a href="https://actix.rs/" target="_blank">home page</a>
+        has some great sample code which we'll use too. Copy the code below to your src/main.rs file and start your rust
+        web server (cargo run). You should be able to visit
+        <a target="_blank" href="http://localhost:8000">http://localhost:8000</a> and see Hello World.
+    </p>
+    <pre>
+        <code class="rust">
+use actix_web::{web, App, HttpRequest, HttpServer, Responder};
+
+fn greet(req: HttpRequest) -> impl Responder {
+    let name = req.match_info().get("name").unwrap_or("World");
+    format!("Hello {}!", &name)
+}
+
+fn main() {
+    HttpServer::new(|| {
+        App::new()
+            .route("/", web::get().to(greet))
+            .route("/{name}", web::get().to(greet))
+    })
+    .bind("127.0.0.1:8000")
+    .expect("Can not bind to port 8000")
+    .run()
+    .unwrap();
+}
+        </code>
+    </pre>
+</section>
+<section>
+    <h2>
+        Rendering HTML with Handlebar templates
+    </h2>
+
+    <p>
+        A basic web server should have the ability to dynamically create html. I decided to go with Handlebars because
+        it's really simple to get started. We'll create a layout page which all other pages can use and then an
+        index page which will be served at the root ("/). Add "handlebars = "2.0.2"" to you dependencies in the
+        Cargo.toml file, create a file called "./running-a-rust-web-server/src/templates/index.hbs" and another file
+        called "./running-a-rust-web-server/src/templates/layout_page.hbs", and copy/paste the contents below into the
+        newly created files.
+    </p>
+    <pre>
+    <code class="handlebars">
+&lt;!--running-a-rust-web-server/src/templates/index.hbs--&gt;
+
+{{#> layout_page}}
+{{#*inline "page_content"}}
+    &lt;p&gt;
+        {{paragraph_text}}
+    &lt;/p&gt;
+{{/inline}}
+{{/layout_page}}
+
+    </code>
+</pre>
+
+    <pre>
+    <code class="handlebars">
+&lt;!--running-a-rust-web-server/src/templates/layout_page.hbs--&gt;
+
+&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+    &lt;meta charset=&quot;UTF-8&quot;&gt;
+    &lt;title&gt;Rust Web Server Example&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+        {{> page_content}}
+&lt;/body&gt;
+&lt;/html&gt;
+        </code>
+</pre>
+    <p>
+        Next we need to update our "src/main.rs" file. The root route is going to register the directory with the
+        templates and then pass data to the index template to render. The "src/main.rs" file should look like the code
+        below. Now you should be able to start the server (cargo run) and view the rendered html!
+    </p>
+    <pre>
+    <code class="rust">
+use actix_web::{web, App, HttpRequest, HttpServer, HttpResponse};
+use handlebars::Handlebars;
+use std::collections::BTreeMap;
+
+fn root(_req: HttpRequest) -> HttpResponse {
+    let mut handlebars = Handlebars::new();
+    handlebars
+        .register_templates_directory(".hbs", "./src/templates")
+        .unwrap();
+
+    let mut data = BTreeMap::new();
+    data.insert("paragraph_text", "This page was rendered using Actix-Web as the web server and handlebars as the templating language!");
+
+    let body = handlebars.render("index", &data).unwrap();
+
+    HttpResponse::Ok().body(body)
+}
+
+fn main() {
+    HttpServer::new(|| {
+        App::new()
+            .route("/", web::get().to(root))
+    })
+        .bind("127.0.0.1:8000")
+        .expect("Can not bind to port 8000")
+        .run()
+        .unwrap();
+}
+    </code>
+</pre>
+</section>
+<a href="https://github.com/logankeenan/running-a-rust-web-server"></a>
+<script src="../scripts/highlight-rust-shell-toml-handlebars.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+</body>
+</html>
