@@ -3,11 +3,9 @@ body {
     font-family: sans-serif;
     color: #000000;
     max-width: 768px;
+    line-height: 1.5;
 }
 
-h1,h2,h3 {
-    line-height:1.5;
-}
 @media (max-width: 768px) {
     body {
         margin: 4rem 20px;
