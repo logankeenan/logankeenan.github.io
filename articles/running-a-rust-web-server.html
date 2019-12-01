@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description"
           content="Running a Rust Web Server with Actix web and Handlebar templates">
-    <link rel="stylesheet" href="../styles-v3.css"/>
+    <link rel="stylesheet" href="../styles-v4.css"/>
     <link rel="stylesheet" href="../styles/highlight-js-a11y-dark.css">
     <title>Logan Keenan - Running a Rust Web Server</title>
 </head>
@@ -59,10 +59,10 @@ cargo 1.39.0 (1c6ec66d5 2019-09-30)
     </h2>
     <p>
         Create a new directory for your project. In this case, create a directory called
-        "running-a-rust-web-server". Change into the newly created directory and run "cargo init". This will create the
+        "running-a-rust-web-server". Change into the newly created directory and run <code>cargo init</code>. This will create the
         basic files
         needed for a Rust app. Plenty of resources exist that go into detail about what initially gets
-        created, so I wont do that here. Next, run the application with "cargo run" and view it's output.
+        created, so I wont do that here. Next, run the application with <code>cargo run</code> and view it's output.
     </p>
     <pre>
         <code class="shell">
@@ -98,8 +98,8 @@ actix-web = "1.0.9"
         </code>
     </pre>
     <p>
-        You can install your projects dependencies with "cargo fetch". Cargo will also install
-        dependencies when you build (cargo build). Note for javascript devs, dependencies are not download at a project
+        You can install your projects dependencies with <code>cargo fetch</code>. Cargo will also install
+        dependencies when you build (<code>cargo build</code>). Note for javascript devs, dependencies are not download at a project
         level. They are downloaded once per version of Rust. Once dependencies have been fetched then the Cargo.lock
         file
         is updated automatically.
@@ -107,7 +107,7 @@ actix-web = "1.0.9"
     <p>
         Actix-Web has made it super easy to get started. Their <a href="https://actix.rs/" target="_blank">home page</a>
         has some great sample code which we'll use too. Copy the code below to your src/main.rs file and start your Rust
-        web server (cargo run). You should be able to visit
+        web server (<code>cargo run</code>). You should be able to visit
         <a target="_blank" href="http://localhost:8000">http://localhost:8000</a> and see Hello World.
     </p>
     <pre>
@@ -145,7 +145,7 @@ fn main() {
     </p>
     <ul>
         <li>
-            Add 'handlebars = "2.0.2"' to you dependencies in the Cargo.toml file
+            Add <code>handlebars = "2.0.2"</code> to you dependencies in the Cargo.toml file
         </li>
         <li>
             Create a file called "./running-a-rust-web-server/src/templates/index.hbs"
@@ -191,7 +191,7 @@ fn main() {
     <p>
         Next we need to update our src/main.rs file. The root route is going to register the directory containing the
         Handlebar templates and then pass data to the index template to render. The src/main.rs file should look like
-        the code below. Now you should be able to start the server (cargo run) and view the rendered html!
+        the code below. Now you should be able to start the server (<code>cargo run</code>) and view the rendered html!
     </p>
     <pre>
     <code class="rust">
