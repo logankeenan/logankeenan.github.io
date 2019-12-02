@@ -6,6 +6,12 @@ body {
     line-height: 1.5;
 }
 
+code {
+    background: #2b2b2b;
+    color: #f8f8f2;
+    padding: 4px;
+}
+
 @media (max-width: 768px) {
     body {
         margin: 4rem 20px;
