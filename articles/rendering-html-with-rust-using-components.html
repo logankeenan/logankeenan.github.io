@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description"
+          content="Rendering HTML with Rust using Components">
+    <link rel="stylesheet" href="../styles-v4.css"/>
+    <link rel="stylesheet" href="../styles/highlight-js-a11y-dark.css">
+    <title>Logan Keenan - Rendering HTML with Rust using Components</title>
+</head>
+<body>
+<nav>
+    <a href="/">Home</a>
+</nav>
+<section>
+    <h1>
+        Rendering HTML with Rust using Components
+    </h1>
+    <time datetime="2019-12-07">
+        December 7, 2019
+    </time>
+    <p>
+        In my last Rust post I decided to use Handlebars for the view layer. Handlerbars is really simple and easy to
+        get going, but I wanted something a little more powerful. Awhile ago, I came across a Rust library called <a
+            href="https://github.com/bodil/typed-html" target="_blank">typed-html</a> created by
+        <a target="_blank" href="https://twitter.com/bodil">Bodil Stokke</a>. It's a fantastic library. What's so great
+        about it? Besides the JSX like syntax, it'll only produce valid html and everything compiles! The
+        biggest advantage I see with this is being able to change my attributes on my models and having the compiler
+        tell me that my views are still correct. I haven't had the chance to work with a view layer with so much
+        safety and I'm very much looking forward to it.
+    </p>
+    <p>
+        First, I want to make sure I can create components to reuse my html code. Without that, I'd have to look for
+        another view layer. After a little messing around I was able to get some code working. My simple example is to
+        create a function where given two string arguments will render a button. The two string arguments represent
+        the class name and the text of the button. Then I created two other functions to create a primary button and
+        secondary button. Those two functions only argument is the button text. They functions call the button
+        function and provide a class name specific to the caller function. This allows the class name to be encapsulated
+        within the primary and secondary button functions functions. It's a pretty simple example, but can be
+        extrapolated to more complex components solutions. The code is posted below and a link to the source code is at
+        the bottom of the page.
+    </p>
+    <p>
+        Overall, I thought it worked pretty well. I'm using Intellij and would really like code completion inside the
+        <code>html!</code> macro. Code completion isn't a necessity, but it'd be really nice to have while I'm still
+        learning Rust. Also, highlight.js, which I use for my code snippets, really doesn't like HTML inside a macro,
+        sorry.
+    </p>
+    <pre>
+        <code class="rust">
+use typed_html::dom::DOMTree;
+use typed_html::html;
+use typed_html::text;
+use typed_html::elements::FlowContent;
+
+
+fn button(class: &str, button_text: &str) -> Box&lt;dyn FlowContent&lt;String&gt;&gt; {
+    html!( &lt;button class={class} type="button"&gt; {text!(button_text)} &lt;/button&gt;)
+}
+
+fn primary_button(button_text: &str) -&gt; Box&lt;dyn FlowContent&lt;String&gt;&gt; {
+    button("Primary", button_text)
+}
+
+fn secondary_button(button_text: &str) -&gt; Box&lt;dyn FlowContent&lt;String&gt;&gt; {
+    button("Secondary", button_text)
+}
+
+
+fn layout() -> String {
+    let doc: DOMTree&lt;String&gt; = html!(
+    &lt;html&gt;
+        &lt;head&gt;
+            &lt;title&gt;"typed-html-components"&lt;/title&gt;
+        &lt;/head&gt;
+        &lt;body&gt;
+            {primary_button("Click Primary!")}
+            {secondary_button("Click Secondary!")}
+        &lt;/body&gt;
+    &lt;/html&gt;
+);
+    return doc.to_string();
+}
+
+fn main() {
+    println!("{}", layout());
+}
+
+        </code>
+    </pre>
+</section>
+<a target="_blank" href="https://github.com/logankeenan/typed-html-components">Source Code</a>
+<script src="../scripts/highlight-rust-shell-toml-handlebars.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+</body>
+</html>
