@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description"
+          content="Dropdown menus without JavaScript">
+    <link rel="stylesheet" href="../styles-v6.css"/>
+    <title>Logan Keenan - Dropdown menus without JavaScript</title>
+    <style>
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown > ul {
+            position: absolute;
+            top: 20px;
+            right: 0;
+            list-style: none;
+            background: #ccc;
+            margin: 0;
+            padding: 5px 10px;
+            display: none;
+        }
+
+        .dropdown:focus-within ul {
+            display: block;
+        }
+
+
+    </style>
+    <script src="../scripts/focus-within-polyfill.js"></script>
+</head>
+<body>
+<nav class="main-nav">
+    <a href="/">Home</a>
+    <a target="_blank" href="https://cultivatedsoftware.com">Hire Me</a>
+    <a href="../talks.html">Talks</a>
+</nav>
+<section>
+    <h1>
+        Dropdown menus without JavaScript
+    </h1>
+    <time datetime="2019-12-23">
+        April 14, 2020
+    </time>
+    <p>
+        A very crude dropdown menu without javascript. It doesn't work in all <a
+            href="https://caniuse.com/#feat=css-focus-within" target="_blank">browsers.</a> However, a polyfill does <a
+            target="_blank" href="https://github.com/matteobad/focus-within-polyfill#readme">exists</a>, and is included on
+        this page.
+    </p>
+    <div class="dropdown">
+        <a href="#" class="dropdown-link">
+            My Dropdown
+        </a>
+        <ul>
+            <li>
+                <a href="/">Home</a>
+            </li>
+            <li>
+                <a target="_blank" href="https://cultivatedsoftware.com">Hire Me</a>
+            </li>
+            <li>
+                <a href="../talks.html">Talks</a>
+            </li>
+        </ul>
+    </div>
+</section>
+</body>
+</html>
