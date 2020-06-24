@@ -18,13 +18,12 @@ pub fn render() -> String {
 
     let mut handlebars = Handlebars::new();
     handlebars.register_template_string("layout_page", layout).unwrap();
+    handlebars.register_helper("uppercase", Box::new(uppercase));
+
     let result = handlebars.render_template(
         plantings_2020,
         &json!({"plants":["green beans","tomatoes","peas","zucchini","peppers","cucumbers","soy beans","corn","melons"]}),
     );
-
-    handlebars.register_helper("uppercase", Box::new(uppercase));
-
 
     result.unwrap()
 }
