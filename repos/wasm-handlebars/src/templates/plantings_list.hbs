@@ -1,0 +1,12 @@
+{{#> layout_page}}
+    {{#*inline "page_content"}}
+        <ul>
+            {{#each plants}}
+                <li>
+                    {{this}}
+                </li>
+            {{/each}}
+        </ul>
+        {{ uppercase "nice!"}}
+    {{/inline}}
+{{/layout_page}}

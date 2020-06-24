@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description"
+          content="Rendering Handlebar Templates with Rust and WASM">
+    <link rel="stylesheet" href="../styles/highlight-js-a11y-dark.css">
+    <link rel="stylesheet" href="../styles-v6.css"/>
+    <title>Logan Keenan - Rendering Handlebar Templates with Rust and WASM</title>
+</head>
+<body>
+<nav class="main-nav">
+    <a href="/">Home</a>
+    <a target="_blank" href="https://cultivatedsoftware.com">Hire Me</a>
+    <a href="../talks.html">Talks</a>
+</nav>
+<section>
+    <h1>Rendering Handlebar Templates with Rust and WASM (Web Assembly)</h1>
+    <time datetime="2020-06-24">
+        June 24, 2020
+    </time>
+    <p>
+        The rust implementation of <a target="_blank" href="https://github.com/sunng87/handlebars-rust">Handlebars</a>
+        was easy to get started Handlebars on the server, so I wanted
+        to see what it would take to render my templates in the browser. I'm going to demonstration two features for
+        handlebars. However, it's not limited to these; I just haven't had a need for other features. Lets take a look
+        at using partials and helpers.
+    </p>
+    <h2>
+        Handlebar Partials
+    </h2>
+    <p>
+        We'll leverage partials to create a page layout and nest a page within it.
+        The API for handlebars was pretty much the same as the the server. However, the templates cannot be read from
+        the file system. Thankfully, Rust has the <a target="_blank"
+                                                     href="https://doc.rust-lang.org/std/macro.include_str.html">include_str!</a>
+        macro which allows the templates to be read at compile time and included in the binary.
+    </p>
+    <pre><code class="handlebars">&lt;section&gt;
+    &lt;h1&gt;Plantings 2020&lt;/h1&gt;
+    {{&gt; page_content}}
+&lt;/section&gt;
+</code></pre>
+    <pre><code class="handlebars">{{#&gt; layout_page}}
+    {{#*inline &quot;page_content&quot;}}
+        &lt;ul&gt;
+            {{#each plants}}
+                &lt;li&gt;
+                    {{this}}
+                &lt;/li&gt;
+            {{/each}}
+        &lt;/ul&gt;
+    {{/inline}}
+{{/layout_page}}
+</code></pre>
+    <pre><code class="rust">let layout = include_str!("./templates/layout.hbs");
+let plantings_2020 = include_str!("templates/plantings_list.hbs");
+
+let mut handlebars = Handlebars::new();
+handlebars.register_template_string("layout_page", layout).unwrap();
+let result = handlebars.render_template(
+    plantings_2020,
+    &json!({"plants":["green beans","tomatoes","peas","zucchini","peppers","cucumbers","soy beans","corn","melons"]}),
+);
+</code></pre>
+    <h2>Handlebar Helpers</h2>
+    <p>Fortunately, custom helpers is the same as the server-side code.</p>
+    <pre><code class="rust">handlebars_helper!(uppercase: | string_to_uppercase: str| {
+    string_to_uppercase.to_uppercase()
+});
+handlebars.register_helper("uppercase", Box::new(uppercase));
+</code></pre>
+
+    <h2>Next Steps</h2>
+    <p>
+        Check out the demo <a href="https://github.com/logankeenan/logankeenan.github.io/repos/wasm-handlebars">repository</a>
+        to see the full code as well as a working demo. The demo simply calls the Rust code (compiled to Wasm) which
+        returns some html markup and set that's to the document body.
+    </p>
+    <p>
+        This solution doesn't seem all that developer friendly. They would have to remember to include any new template
+        so it'll be contained in the binary. The <a target="_blank" href="https://crates.io/crates/include_dir">include_dir</a>
+        create could easily allow for a template factory with the path including the filename as a parameter.
+    </p>
+</section>
+<script src="../scripts/highlight-handlebars-rust.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+</body>
+</html>
