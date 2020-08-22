@@ -1,5 +1,5 @@
 remove meta data for images with [exiftool](https://exiftool.org/)
 
 ```
-exiftool -all:all= .   
+exiftool -all:all= *.jpg   
 ```
