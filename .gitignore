@@ -1,3 +1,5 @@
 .idea
 .DS_Store
 repos/wasm-handlebars/target/*
+static/processed_images
+*.jpg_original
