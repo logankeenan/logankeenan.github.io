@@ -2,7 +2,7 @@
 +++
 title = "In Pursuit of Rust Development"
 description = "An Introduction to Rust Web Development"
-date = 2019-11-29
+date = 2019-11-29T00:00:00Z
 +++
 
   

@@ -1,7 +1,7 @@
 +++
 title = "Running a Rust Web Server"
 description = "Running a Rust Web Server with Actix web and Handlebar templates"
-date = 2019-11-29
+date = 2019-11-29T00:00:01Z
 +++
 
 The first thing I want to do is get a web server running with Rust. I'm going to walk through installing Rust,
