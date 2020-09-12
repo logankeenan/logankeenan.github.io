@@ -64,7 +64,7 @@ handlebars.register_helper("uppercase", Box::new(uppercase));
 ## Next Steps
     
 Check out the demo <a href="https://github.com/logankeenan/logankeenan.github.io/repos/wasm-handlebars">repository</a>
-to see the full code as well as a working <a href="https://logankeenan.com/repos/wasm-handlebars/index.html">demo</a>.
+to see the full code as well as a working <a href="/demos/wasm-handlebars/index.html">demo</a>.
 The demo simply calls the Rust code (compiled to Wasm) which returns some html markup which is set to the
 document body.
     
