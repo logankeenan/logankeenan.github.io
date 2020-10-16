@@ -4,7 +4,7 @@ description = "A series of blogs posts demonstrating cross-platform database acc
 date = 2020-10-13
 +++
 
-This series of blogs posts will demonstrate SQLite database access written in Rust and cross-compiled
+This series of blog posts will demonstrate SQLite database access written in Rust and cross-compiled
 for iOS, Android and Node.js. Why do this?  Most apps need some sort of way to store data.  Each 
 platform has their own way to store data, so storing data ends up being implemented three times.  Duplicate
 code for the same feature isn't ideal.  Creating the database access layer in Rust and compiling for each platform is a
@@ -12,7 +12,7 @@ code for the same feature isn't ideal.  Creating the database access layer in Ru
 
 ## Using SQLite with Rust
 
-This first post will cover creating the rust-core library that accesses the database for creating and querying records.
+This first post will cover creating the rust-core library that accesses the database.
 Let's start by creating a directory which will eventually contain the code for the different platforms.
 
 ```bash 
