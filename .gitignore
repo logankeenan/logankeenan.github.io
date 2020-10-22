@@ -3,3 +3,4 @@
 repos/wasm-handlebars/target/*
 static/processed_images
 *.jpg_original
+*.png_original
