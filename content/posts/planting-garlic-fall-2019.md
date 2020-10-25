@@ -26,5 +26,5 @@ allow me to plant twice as much garlic in a given space compared to this years m
 itself quickly and could also be used for other crops.
     
     
- {{ resize_image(path="../static/images/garlic-fall-2019.jpg") }}
+ {{ resize_image(path="../static/images/garlic-fall-2019.jpg", alt="Two rows of garlic, 30 foot long, 12 inches wide, and bulbs spaced 6 inches apart") }}
 

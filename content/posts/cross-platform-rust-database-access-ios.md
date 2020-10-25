@@ -115,19 +115,19 @@ cp rust-ios/target/universal/release/librust_ios.a ios/rust-ios/libs
 
 Add `librust_ios.a` under Frameworks, Libraries, and Embedded Content in your iOS project.
 
-{{ resize_image(path="../static/images/rust-ios-add-binary-to-project.png") }}
+{{ resize_image(path="../static/images/rust-ios-add-binary-to-project.png", alt="Xcode application settings for Frameworks, Libraries, and Embedded Content") }}
 
 Set the Header Search Paths to `ios/rust-ios/include` and Library Search Paths and `ios/rust-ios/libs`.
 
-{{ resize_image(path="../static/images/rust-ios-header-library-paths.png") }}
+{{ resize_image(path="../static/images/rust-ios-header-library-paths.png", alt="Xcode application settings for Header Search Paths and Library Search Paths") }}
 
 Set the Objective-C Bridging Header to `ios/rust-ios/include/rust-ios.h`.
 
-{{ resize_image(path="../static/images/rust-ios-bridging-header.png") }}
+{{ resize_image(path="../static/images/rust-ios-bridging-header.png", alt="Xcode application settings for Objective-C Bridging Header") }}
 
 Finally, run or debug the app to see the database call result in the logs.
 
-{{ resize_image(path="../static/images/rust-ios-output.png") }}
+{{ resize_image(path="../static/images/rust-ios-output.png", alt="Xcode log output: Person { id: 1, name: 'Ada Lovelace' } ") }}
 
 
 Congratulations, an iOS app is now calling Rust to access a SQLite database! Check out the rust-ios 

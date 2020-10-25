@@ -117,7 +117,7 @@ cargo build --target i686-linux-android --release
 Create a new Android project in the `/cross-platform-rust-database-access` directory targeting API 21 and 
 with `com.example.android` as the package.
 
-{{ resize_image(path="../static/images/android-rust-new-project.png") }}
+{{ resize_image(path="../static/images/android-rust-new-project.png", alt="Android Studio - Create New Project") }}
 
 Update the MainActivity.kt with the code below.  The code gets a location for the SQLite file to be saved, passes it to 
 the binding and then logs out the result of the database call. 
@@ -158,7 +158,7 @@ cp rust-android/target/i686-linux-android/release/librust_android.so  android/ap
 Finally, start or debug the Android application.  The result of the calldatabase function will be outputted to the logs.
 
 
-{{ resize_image(path="../static/images/android-rust-database-output.png") }}
+{{ resize_image(path="../static/images/android-rust-database-output.png", alt="Android Studio log output: Person { id: 1, name: 'Ada Lovelace' } ") }}
 
 Congratulations, an Android app is now calling Rust to access a SQLite database! A next step might be serializing the 
 result into a class to be used with the Android application.  It's not included in this post, but these build steps could be 

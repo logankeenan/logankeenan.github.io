@@ -21,11 +21,11 @@ that the bulbs weren't squished together.  This was going in our basement, so we
 The total harvest was ~100 hard-neck bulbs and ~20 soft-neck bulbs.  We started with about 25 hard-neck bulbs and 4-5 
 soft-neck bulbs.  I'm pretty happy with the 400% yield and will save the biggest bulbs to be planted this fall.
 
-{{ resize_image(path="../static/images/garlic-on-table-with-daughter-2020.jpg") }}
+{{ resize_image(path="../static/images/garlic-on-table-with-daughter-2020.jpg", alt="Garlic on a table with child standing on the stems") }}
 
-{{ resize_image(path="../static/images/garlic-harvest-on-table-2020.jpg") }}
+{{ resize_image(path="../static/images/garlic-harvest-on-table-2020.jpg", alt="Large garlic on a table") }}
 
-{{ resize_image(path="../static/images/garlic-hanging-in-garage-2020.jpg") }}
+{{ resize_image(path="../static/images/garlic-hanging-in-garage-2020.jpg", alt="Garlic hanging in a garage") }}
 
-{{ resize_image(path="../static/images/garlic-cured-hanging-2020.jpg") }}  
+{{ resize_image(path="../static/images/garlic-cured-hanging-2020.jpg", alt="Cured garlic handing in a basement") }}  
 
