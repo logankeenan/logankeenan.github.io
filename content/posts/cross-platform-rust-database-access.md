@@ -58,7 +58,7 @@ pub fn database_test(database_location: String) -> String {
 
     connection.execute(
         "INSERT INTO person (name) VALUES (?1)",
-        params!["Logan Keenan"],
+        params!["Ada Lovelace"],
     ).unwrap();
 
     let mut stmt = connection.prepare("SELECT id, name FROM person").unwrap();
@@ -69,9 +69,9 @@ pub fn database_test(database_location: String) -> String {
         })
     }).unwrap();
 
-    let option = person_iter.last().unwrap().unwrap();
+    let person = person_iter.last().unwrap().unwrap();
 
-    format!("{:?}", option)
+    format!("{:?}", person)
 }
 ```
 
