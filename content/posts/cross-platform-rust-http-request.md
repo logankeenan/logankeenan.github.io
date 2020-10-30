@@ -4,7 +4,7 @@ description = "How to make an HTTP request in Rust and cross-compile it for Node
 date = 2020-10-28
 +++
 
-This post will take a look at what's needed to make in HTTP request in Rust using 
+This post will take a look at what's needed to make an HTTP request in Rust using 
 [reqwest](https://crates.io/crates/reqwest) and then cross-compile to iOS, Android, and Node.js. Start by cloning 
 the mono-repo created from the 
 [Cross Platform Rust: Database Access](https://github.com/logankeenan/cross-platform-rust-database-access) blog series. 
