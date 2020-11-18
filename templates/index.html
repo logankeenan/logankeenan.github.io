@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description"
           content="My personal website with various posts about software development and other random things.">
-    <title>Logan Keenan - Father, Husband, Software Developer, and Builder of Things.</title>
+    <title>Logan Keenan</title>
     <link href="/css/styles.css" rel="stylesheet">
 </head>
 <body>
@@ -15,13 +15,8 @@
     <a href="/talks">Talks</a>
 </nav>
 <h1>Logan Keenan</h1>
-<p>
-    Father, Husband, Software Developer, and Builder of Things.
-</p>
-
 
 {% set posts = get_section(path="posts/_index.md") %}
-<h2>Posts</h2>
 <ul>
     {% for page in posts.pages %}
     <li>
