@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description"
+          content="{{ page.description }}">
+    <title>Logan Keenan - {{ page.title }}</title>
+    <link href="/css/styles.css" rel="stylesheet"/>
+</head>
+<body>
+<style>
+
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        background: #2b2b2b;
+        max-width: 100%;
+        margin: 0;
+        font-size: 1.5rem;
+        color: #fff;
+    }
+
+    a {
+        color: #fff;
+    }
+
+    section {
+        height: 100vh;
+        padding: 2rem 3rem;
+        position: relative;
+    }
+
+    .slide-nav {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        padding: 0 3rem;
+    }
+
+</style>
+
+{% block content %}
+{{ page.content | safe }}
+{% endblock content %}
+
+</body>
