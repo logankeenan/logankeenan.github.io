@@ -58,7 +58,7 @@ since 1.0
 * All purpose modern programming language
 * Zero-cost abstractions
 * Fast
-    * No Runtime*
+    * No Runtime
     * No Garbage collector
 * Safe
     * Memory safe
@@ -87,8 +87,8 @@ web servers, native apps, WASM, and anything else you'd use for any other progra
         I have to install no Ruby or python or Java on my server in order for my program to actually execute work. 
         The run time takes the program and execute it and I see the result.  Rest doesn't have a runtime and everything 
         that's needed for that program to run is included in the executable so all you have to do is run the execuable 
-        and see the progress results.  So what does this mean? It makes Rust great candidate for a minute systems and 
-        also means that Russell boot pretty much instantly.  The overall size of the program is going to be smaller 
+        and see the progress results.  So what does this mean? It makes Rust great candidate for a embedded systems and 
+        also means that Rust boot pretty much instantly.  The overall size of the program is going to be smaller 
         because you're only compiling what you need and the other things that are commonly used like in a runtime.  
     * Rust has no garbage collector and it solves the problem by this idea of "ownership" which will talk about a little bit later. 
         Even though it doesn't have a garbage collector You don't need to manage memory like he would in C or C++.  The 
@@ -130,7 +130,7 @@ web servers, native apps, WASM, and anything else you'd use for any other progra
 # Downsides
 
 * Steep learning curve
-* Long compiler times
+* Long compile times
 
 <!-- 
 Dictated Notes: 
@@ -141,10 +141,69 @@ pick up rust more quickly.  However once you've grabbed some of these paradigms 
   
 -->
 
-<div class="slide-nav">
+<div class="slide-nav"> 
 
 [previous](#slide3)
 [next](#slide5)
+
+</div>
+
+</section>
+
+<section id="slide5">
+
+# Getting Started
+
+* Install [Rust](https://www.rust-lang.org/tools/install)
+* "Ownership"
+* Structs & Traits
+
+<!-- 
+Dictated Notes: 
+rustup: Rest up is just basically your version manager for installing rust so you can think of this like in DM or our BM it'll help you install versions of rust and then also compile targets
+rustc: 
+cargo: package manager
+
+Things to show
+* rustup
+* rustc 
+* cargo
+* cargo new
+* take a look at what it creates
+* debug 
+    * quicker than release
+* release
+
+-->
+
+<div class="slide-nav">
+
+[previous](#slide4)
+[next](#slide6)
+
+</div>
+
+</section>
+
+
+<section id="slide6">
+
+# Resources
+
+* Free Book: [The Rust Programming Language](https://doc.rust-lang.org/book/)
+* YouTube: [Jon Gjengset](https://www.youtube.com/channel/UC_iD0xppBwwsrM9DegC5cQQ)
+* YouTube: [Ryan Levick](https://www.youtube.com/channel/UCpeX4D-ArTrsqvhLapAHprQ)
+* [Rust By Example](https://doc.rust-lang.org/rust-by-example/)
+* Rust libraries for web development  [arewewebyet.org](https://www.arewewebyet.org/)
+* Mailing List: [This Week in Rust](https://this-week-in-rust.org/)
+* Awesome List: [Awesome Rust](https://github.com/rust-unofficial/awesome-rust)
+<!-- 
+
+-->
+
+<div class="slide-nav">
+
+[previous](#slide5)
 
 </div>
 
