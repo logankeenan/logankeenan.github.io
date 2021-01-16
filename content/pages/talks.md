@@ -5,7 +5,7 @@ path = "/talks"
 +++
 # Talks
 * An Introduction to Rust
-    * [Recording](https://www.twitch.tv/videos/837683581?t=21m46s)
+    * [Recording](https://www.youtube.com/watch?v=LXw24zd5AeA)
     * [Slides](/slides/introduction-to-rust/)
     * [Des Moines Web Geeks](https://www.dsmwebgeeks.com/wg_events/intro-to-rust/) [DSMJS](https://dsmjs.com/2020/12/14/meeting.html)
 *  <a target="_blank" href="http://www.iowaruby.org/meetings/2018/09/">Exploring Action Cable in Rails</a>
