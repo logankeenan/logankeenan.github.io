@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description"
+          content="A series of blogs posts demonstrating cross-platform database access via Rust">
+    <title>Logan Keenan - Cross-Platform Rust: Database Access</title>
+    <link href="/css/styles.css" rel="stylesheet" />
+</head>
+<body>
+<nav class="main-nav">
+    <a href="/">Home</a>
+    <a target="_blank" href="https://cultivatedsoftware.com">Hire Me</a>
+    <a href="/talks">Talks</a>
+</nav>
+
+<h1>
+    Cross-Platform Rust: Database Access
+</h1>
+<time datetime="2020-10-13">
+    October 13, 2020
+</time>
+<p>This series of blogs posts will demonstrate SQLite database access written in Rust and cross-compiled
+for iOS, Android and Node.js. Why do this?  Most apps need some sort of way to store data.  Each 
+platform has their own way to store data, so storing data ends up being implemented three times.  Duplicate
+code for the same feature isn't ideal.  Creating the database access layer in Rust and compiling for each platform is a
+way to reduce redundant code.</p>
+<h2 id="using-sqlite-with-rust">Using SQLite with Rust</h2>
+<p>This first post will cover creating the rust-core library that accesses the database for creating and querying records.
+Let's start by creating a directory which will eventually contain the code for the different platforms.</p>
+<pre style="background-color:#2b303b;">
+<code class="language-bash" data-lang="bash"><span style="color:#bf616a;">mkdir</span><span style="color:#c0c5ce;"> cross-platform-rust-database-access
+</span><span style="color:#96b5b4;">cd</span><span style="color:#c0c5ce;"> cross-platform-rust-database-access
+</span></code></pre>
+<p>Next, create a Rust library for the database access code which will be reused across platforms. </p>
+<pre style="background-color:#2b303b;">
+<code class="language-bash" data-lang="bash"><span style="color:#bf616a;">cargo</span><span style="color:#c0c5ce;"> new rust-core</span><span style="color:#bf616a;"> --lib
+</span></code></pre>
+<p>Update the cargo.toml file to include <a href="https://crates.io/crates/rusqlite">rusqlite</a> as a dependency.  Rusqlite uses the
+C implementation of SQLite which is built from source at compile time by leveraging the &quot;bundled&quot; feature.</p>
+<pre style="background-color:#2b303b;">
+<code class="language-toml" data-lang="toml"><span style="color:#c0c5ce;">[dependencies]
+</span><span style="color:#bf616a;">rusqlite </span><span style="color:#c0c5ce;">= {</span><span style="color:#bf616a;">version</span><span style="color:#c0c5ce;">= &quot;</span><span style="color:#a3be8c;">0.24.1</span><span style="color:#c0c5ce;">&quot;, </span><span style="color:#bf616a;">features</span><span style="color:#c0c5ce;">=[&quot;</span><span style="color:#a3be8c;">bundled</span><span style="color:#c0c5ce;">&quot;]}
+</span></code></pre>
+<p>Finally, let's get to the code.  Feel free to copy/paste the code below.  Notice the database_location is used as a
+parameter to the function. Why?  Each platform has different requirements around file access, so the platform needs to 
+provide where Rust can read/write to the SQLite file.</p>
+<pre style="background-color:#2b303b;">
+<code class="language-rust" data-lang="rust"><span style="color:#b48ead;">use </span><span style="color:#c0c5ce;">rusqlite::{params, Connection};
+
+#[</span><span style="color:#bf616a;">derive</span><span style="color:#c0c5ce;">(Debug)]
+</span><span style="color:#b48ead;">struct </span><span style="color:#c0c5ce;">Person {
+    </span><span style="color:#bf616a;">id</span><span style="color:#c0c5ce;">: </span><span style="color:#b48ead;">i32</span><span style="color:#c0c5ce;">,
+    </span><span style="color:#bf616a;">name</span><span style="color:#c0c5ce;">: String,
+}
+
+</span><span style="color:#b48ead;">pub fn </span><span style="color:#8fa1b3;">database_test</span><span style="color:#c0c5ce;">(</span><span style="color:#bf616a;">database_location</span><span style="color:#c0c5ce;">: String) -&gt; String {
+    </span><span style="color:#b48ead;">let</span><span style="color:#c0c5ce;"> connection = Connection::open(database_location).</span><span style="color:#96b5b4;">unwrap</span><span style="color:#c0c5ce;">();
+
+    connection.</span><span style="color:#96b5b4;">execute</span><span style="color:#c0c5ce;">(
+        &quot;</span><span style="color:#a3be8c;">CREATE TABLE IF NOT EXISTS person (
+                  id              INTEGER PRIMARY KEY,
+                  name            TEXT NOT NULL
+                  )</span><span style="color:#c0c5ce;">&quot;,
+        params![],
+    ).</span><span style="color:#96b5b4;">unwrap</span><span style="color:#c0c5ce;">();
+
+    connection.</span><span style="color:#96b5b4;">execute</span><span style="color:#c0c5ce;">(
+        &quot;</span><span style="color:#a3be8c;">INSERT INTO person (name) VALUES (?1)</span><span style="color:#c0c5ce;">&quot;,
+        params![&quot;</span><span style="color:#a3be8c;">Ada Lovelace</span><span style="color:#c0c5ce;">&quot;],
+    ).</span><span style="color:#96b5b4;">unwrap</span><span style="color:#c0c5ce;">();
+
+    </span><span style="color:#b48ead;">let mut</span><span style="color:#c0c5ce;"> stmt = connection.</span><span style="color:#96b5b4;">prepare</span><span style="color:#c0c5ce;">(&quot;</span><span style="color:#a3be8c;">SELECT id, name FROM person</span><span style="color:#c0c5ce;">&quot;).</span><span style="color:#96b5b4;">unwrap</span><span style="color:#c0c5ce;">();
+    </span><span style="color:#b48ead;">let</span><span style="color:#c0c5ce;"> person_iter = stmt.</span><span style="color:#96b5b4;">query_map</span><span style="color:#c0c5ce;">(params![], |</span><span style="color:#bf616a;">row</span><span style="color:#c0c5ce;">| {
+        Ok(Person {
+            id: row.</span><span style="color:#96b5b4;">get</span><span style="color:#c0c5ce;">(</span><span style="color:#d08770;">0</span><span style="color:#c0c5ce;">).</span><span style="color:#96b5b4;">unwrap</span><span style="color:#c0c5ce;">(),
+            name: row.</span><span style="color:#96b5b4;">get</span><span style="color:#c0c5ce;">(</span><span style="color:#d08770;">1</span><span style="color:#c0c5ce;">).</span><span style="color:#96b5b4;">unwrap</span><span style="color:#c0c5ce;">(),
+        })
+    }).</span><span style="color:#96b5b4;">unwrap</span><span style="color:#c0c5ce;">();
+
+    </span><span style="color:#b48ead;">let</span><span style="color:#c0c5ce;"> person = person_iter.</span><span style="color:#96b5b4;">last</span><span style="color:#c0c5ce;">().</span><span style="color:#96b5b4;">unwrap</span><span style="color:#c0c5ce;">().</span><span style="color:#96b5b4;">unwrap</span><span style="color:#c0c5ce;">();
+
+    format!(&quot;</span><span style="color:#d08770;">{:?}</span><span style="color:#c0c5ce;">&quot;, person)
+}
+</span></code></pre>
+<p>Build the project to make sure everything compiles correctly.</p>
+<pre style="background-color:#2b303b;">
+<code class="language-bash" data-lang="bash"><span style="color:#bf616a;">$</span><span style="color:#c0c5ce;"> cargo build
+</span></code></pre>
+<p>The next <a href="/posts/cross-platform-rust-database-access-nodejs">post</a> will cover how to integrate the newly created rust-core library in Node.js.</p>
+<p><a href="https://github.com/logankeenan/cross-platform-rust-database-access/tree/main/rust-core">Source Code</a></p>
+
+
+</body>
+</html>

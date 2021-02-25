@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description"
+          content="Leveraging Rust to create a local server for build hybrid apps">
+    <title>Logan Keenan - Hybrid Apps with Rust</title>
+    <link href="/css/styles.css" rel="stylesheet" />
+</head>
+<body>
+<nav class="main-nav">
+    <a href="/">Home</a>
+    <a target="_blank" href="https://cultivatedsoftware.com">Hire Me</a>
+    <a href="/talks">Talks</a>
+</nav>
+
+<h1>
+    Hybrid Apps with Rust
+</h1>
+<time datetime="2021-02-25">
+    February 25, 2021
+</time>
+<p>I'm working on an app which I'll hopefully release soon. It's a hybrid app. No, it's not a WebView that loads remote
+content from a server. It's not a WebView that loads a JavaScript app. Rust isn't compiled to WASM and running in a
+WebView. It's a <em>local</em> server built with Rust that executes on iOS and Android. The native code makes a request to
+the <em>local</em> server, receives a response, and renders the HTML response in a WebView. It appears to be performant
+and is a great developer experience since it's similar to creating a web app.</p>
+<h2 id="local-server"><em>local</em> Server</h2>
+<p>For the most part, the <em>local</em> server is similar to a web server except isn't bound to a port and isn't <em>running</em>. It's a
+stateless function invoked by native code. It's takes two parameters. The <code>appContext</code> which holds things related to the
+native app, like the native file system location for the SQLite database. The second is the <code>appRequest</code> which is an
+object that represents an HTTP request. The <em>local</em> server receives the request, processes it, and returns an <code>appResponse</code>
+which is an object that represents an HTTP response. The native code does whatever it needs, based on the content of the
+response. The native code and <em>local</em> server behave in a way that is similar to a client-server pattern.</p>
+<p>The <em>local</em> server framework is similar to <a href="https://actix.rs/">Actix-Web</a> and actually
+uses <a href="https://crates.io/crates/actix-router">actix-router</a>. It also leverages <a href="https://crates.io/crates/diesel">Diesel</a>
+with SQLite, <a href="https://crates.io/crates/handlebars">handlebars</a> for rendering, and handful of other crates.</p>
+<h2 id="native-code">Native Code</h2>
+<p>The native code is just the glue code between the <em>local</em> server and WebViews. For Android, it leverages a single
+activity and <a href="https://developer.android.com/guide/fragments">Fragments</a> to provide native-like navigation between pages.
+iOS pushes a controller with a WebView on to the UINavigationController stack to handle
+page navigation. When a user clicks a link or submits a form then the url and data is passed over the JavaScript
+bridge to the native code and on to the <em>local</em> server. The back action pops controllers for iOS and pops fragments for
+Android. It's easy to switch to native code by looking at the request coming from the JavaScript bridge and calling
+native code rather than the <em>local</em> server. The native code is fairly simple, but could be as complex as the apps needs
+it to be.</p>
+<h2 id="next-steps">Next Steps</h2>
+<p>I've figured out page navigation, forms, external HTTP requests, JavaScript, CSS, database access, and managing files
+between the WebView and the native file system. The following are ideas I might pursue as my app(s) need them.</p>
+<ul>
+<li>Make the <em>local</em> server <em>run</em>. Passing the <code>appContext</code> on each request is a bit annoying. Sharing memory between the
+native file system and Rust would solve this.</li>
+<li>Highly interactive UIs. I could do this with JavaScript, but rather avoid it and do everything in Rust. Ideally, the
+UI would make fetch requests to the <em>local</em> server and pass the HTML response
+to <a href="https://github.com/patrick-steele-idem/morphdom">morphdom</a>
+to update the DOM.</li>
+<li>WebSockets between the <em>local</em> server and a web server</li>
+<li>WebRTC between the <em>local</em> servers on different devices</li>
+</ul>
+
+
+</body>
+</html>

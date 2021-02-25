@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description"
+          content="Rendering HTML with Rust using Components">
+    <title>Logan Keenan - Rendering HTML with Rust using Components</title>
+    <link href="/css/styles.css" rel="stylesheet" />
+</head>
+<body>
+<nav class="main-nav">
+    <a href="/">Home</a>
+    <a target="_blank" href="https://cultivatedsoftware.com">Hire Me</a>
+    <a href="/talks">Talks</a>
+</nav>
+
+<h1>
+    Rendering HTML with Rust using Components
+</h1>
+<time datetime="2019-12-07">
+    December  7, 2019
+</time>
+<p>In my last Rust post I decided to use Handlebars for the view layer. Handlerbars is really simple and easy to
+get going, but I wanted something a little more powerful. Awhile ago, I came across a Rust library called 
+<a href="https://github.com/bodil/typed-html">typed-html</a> created by <a href="https://twitter.com/bodil">Bodil Stokke</a>. It's a fantastic library. What's so great
+about it? Besides the JSX like syntax, it'll only produce valid html and everything compiles! The
+biggest advantage I see with this is being able to change my attributes on my models and having the compiler
+tell me that my views are still correct. I haven't had the chance to work with a view layer with so much
+safety and I'm very much looking forward to it.</p>
+<p>First, I want to make sure I can create components to reuse my html code. Without that, I'd have to look for
+another view layer. After a little messing around I was able to get some code working. My simple example is to
+create a function where given two string arguments will render a button. The two string arguments represent
+the class name and the text of the button. Then I created two other functions to create a primary button and
+secondary button. Those two functions only argument is the button text. The functions call the button
+function and provide a class name specific to the caller function. This allows the class name to be encapsulated
+within the primary and secondary button functions. It's a pretty simple example, but can be
+extrapolated to more complex components solutions. The code is posted below and a link to the source code is at
+the bottom of the page.</p>
+<p>Overall, I thought it worked pretty well. I'm using Intellij and would really like code completion inside the
+<code>html!</code> macro. Code completion isn't a necessity, but it'd be really nice to have while I'm still
+learning Rust. 
+sorry.</p>
+<pre style="background-color:#2b303b;">
+<code class="language-rust" data-lang="rust"><span style="color:#b48ead;">use </span><span style="color:#c0c5ce;">typed_html::dom::DOMTree;
+</span><span style="color:#b48ead;">use </span><span style="color:#c0c5ce;">typed_html::html;
+</span><span style="color:#b48ead;">use </span><span style="color:#c0c5ce;">typed_html::text;
+</span><span style="color:#b48ead;">use </span><span style="color:#c0c5ce;">typed_html::elements::FlowContent;
+
+
+</span><span style="color:#b48ead;">fn </span><span style="color:#8fa1b3;">button</span><span style="color:#c0c5ce;">(</span><span style="color:#bf616a;">class</span><span style="color:#c0c5ce;">: &amp;</span><span style="color:#b48ead;">str</span><span style="color:#c0c5ce;">, </span><span style="color:#bf616a;">button_text</span><span style="color:#c0c5ce;">: &amp;</span><span style="color:#b48ead;">str</span><span style="color:#c0c5ce;">) -&gt; Box&lt;dyn FlowContent&lt;String&gt;&gt; {
+    html!( &lt;button class={class} </span><span style="color:#b48ead;">type</span><span style="color:#c0c5ce;">=&quot;</span><span style="color:#a3be8c;">button</span><span style="color:#c0c5ce;">&quot;&gt; {text!(button_text)} &lt;/button&gt;)
+}
+
+</span><span style="color:#b48ead;">fn </span><span style="color:#8fa1b3;">primary_button</span><span style="color:#c0c5ce;">(</span><span style="color:#bf616a;">button_text</span><span style="color:#c0c5ce;">: &amp;</span><span style="color:#b48ead;">str</span><span style="color:#c0c5ce;">) -&gt; Box&lt;dyn FlowContent&lt;String&gt;&gt; {
+    </span><span style="color:#96b5b4;">button</span><span style="color:#c0c5ce;">(&quot;</span><span style="color:#a3be8c;">Primary</span><span style="color:#c0c5ce;">&quot;, button_text)
+}
+
+</span><span style="color:#b48ead;">fn </span><span style="color:#8fa1b3;">secondary_button</span><span style="color:#c0c5ce;">(</span><span style="color:#bf616a;">button_text</span><span style="color:#c0c5ce;">: &amp;</span><span style="color:#b48ead;">str</span><span style="color:#c0c5ce;">) -&gt; Box&lt;dyn FlowContent&lt;String&gt;&gt; {
+    </span><span style="color:#96b5b4;">button</span><span style="color:#c0c5ce;">(&quot;</span><span style="color:#a3be8c;">Secondary</span><span style="color:#c0c5ce;">&quot;, button_text)
+}
+
+
+</span><span style="color:#b48ead;">fn </span><span style="color:#8fa1b3;">layout</span><span style="color:#c0c5ce;">() -&gt; String {
+    </span><span style="color:#b48ead;">let</span><span style="color:#c0c5ce;"> doc: DOMTree&lt;String&gt; = html!(
+    &lt;html&gt;
+        &lt;head&gt;
+            &lt;title&gt;&quot;</span><span style="color:#a3be8c;">typed-html-components</span><span style="color:#c0c5ce;">&quot;&lt;/title&gt;
+        &lt;/head&gt;
+        &lt;body&gt;
+            {</span><span style="color:#96b5b4;">primary_button</span><span style="color:#c0c5ce;">(&quot;</span><span style="color:#a3be8c;">Click Primary!</span><span style="color:#c0c5ce;">&quot;)}
+            {</span><span style="color:#96b5b4;">secondary_button</span><span style="color:#c0c5ce;">(&quot;</span><span style="color:#a3be8c;">Click Secondary!</span><span style="color:#c0c5ce;">&quot;)}
+        &lt;/body&gt;
+    &lt;/html&gt;
+);
+    </span><span style="color:#b48ead;">return</span><span style="color:#c0c5ce;"> doc.</span><span style="color:#96b5b4;">to_string</span><span style="color:#c0c5ce;">();
+}
+
+</span><span style="color:#b48ead;">fn </span><span style="color:#8fa1b3;">main</span><span style="color:#c0c5ce;">() {
+    println!(&quot;</span><span style="color:#d08770;">{}</span><span style="color:#c0c5ce;">&quot;, </span><span style="color:#96b5b4;">layout</span><span style="color:#c0c5ce;">());
+}
+</span></code></pre>
+<p><a href="https://github.com/logankeenan/typed-html-components">Source Code</a></p>
+
+
+</body>
+</html>

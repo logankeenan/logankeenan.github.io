@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description"
+          content="Automatically use the correct Node version when changing directories with NVM">
+    <title>Logan Keenan - Automatically use the correct Node version when changing directories with NVM</title>
+    <link href="/css/styles.css" rel="stylesheet" />
+</head>
+<body>
+<nav class="main-nav">
+    <a href="/">Home</a>
+    <a target="_blank" href="https://cultivatedsoftware.com">Hire Me</a>
+    <a href="/talks">Talks</a>
+</nav>
+
+<h1>
+    Automatically use the correct Node version when changing directories with NVM
+</h1>
+<time datetime="2019-10-17">
+    October 17, 2019
+</time>
+<p>TLDR: Copy the script below to your .bash_profile (Mac) or .bashrc (Linux) to use the correct node version when starting
+a terminal session or changing directories.</p>
+<p>There are plenty of tools that can do this for you, but bash is all you need. It will define a function which will check
+to see if a .nvmrc file exist and call nvm use if it does. I immediately invoke the function because the user might be 
+opening a new terminal session in a directory that contains an .nvmrc file. Otherwise, I hijack cd and call the 
+useNvmVersion function after a user has changed directories.</p>
+<pre style="background-color:#2b303b;">
+<code class="language-bash" data-lang="bash"><span style="color:#b48ead;">function </span><span style="color:#8fa1b3;">useNvmVersion </span><span style="color:#c0c5ce;">{
+    </span><span style="color:#b48ead;">if </span><span style="color:#96b5b4;">[ </span><span style="color:#bf616a;">-f</span><span style="color:#c0c5ce;"> .nvmrc </span><span style="color:#96b5b4;">]</span><span style="color:#c0c5ce;">; </span><span style="color:#b48ead;">then
+        </span><span style="color:#bf616a;">nvm</span><span style="color:#c0c5ce;"> use
+    </span><span style="color:#b48ead;">fi
+</span><span style="color:#c0c5ce;">}
+
+</span><span style="color:#bf616a;">useNvmVersion
+
+</span><span style="color:#b48ead;">function </span><span style="color:#8fa1b3;">cdEnhanced </span><span style="color:#c0c5ce;">{
+    </span><span style="color:#96b5b4;">cd </span><span style="color:#c0c5ce;">$</span><span style="color:#bf616a;">1
+    useNvmVersion
+</span><span style="color:#c0c5ce;">}
+
+</span><span style="color:#96b5b4;">alias </span><span style="color:#8fa1b3;">cd</span><span style="color:#c0c5ce;">=</span><span style="color:#a3be8c;">cdEnhanced
+</span></code></pre>
+
+</body>
+</html>

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description"
+          content="A Rust library featuring SQLite database access integrated with iOS">
+    <title>Logan Keenan - Cross-Platform Rust: Database Access with iOS Integration</title>
+    <link href="/css/styles.css" rel="stylesheet" />
+</head>
+<body>
+<nav class="main-nav">
+    <a href="/">Home</a>
+    <a target="_blank" href="https://cultivatedsoftware.com">Hire Me</a>
+    <a href="/talks">Talks</a>
+</nav>
+
+<h1>
+    Cross-Platform Rust: Database Access with iOS Integration
+</h1>
+<time datetime="2020-10-23">
+    October 23, 2020
+</time>
+<p>This post is part of a series of posts focused on 
+<a href="/posts/cross-platform-rust-database-access/">Cross-Platform Rust: Database Access</a>. 
+This post will cover integrating the rust-core library with iOS.  You may also be interested in
+<a href="/posts/cross-platform-rust-database-access-nodejs">Cross-Platform Rust: Database Access with Node.js Integration</a> or
+<a href="/posts/cross-platform-rust-database-access-android">Cross-Platform Rust: Database Access with Android Integration</a></p>
+<p>Start by installing the required rust targets for iOS</p>
+<pre style="background-color:#2b303b;">
+<code class="language-bash" data-lang="bash"><span style="color:#bf616a;">rustup</span><span style="color:#c0c5ce;"> target add aarch64-apple-ios
+</span><span style="color:#bf616a;">rustup</span><span style="color:#c0c5ce;"> target add x86_64-apple-ios
+</span></code></pre>
+<p>Install the <a href="https://crates.io/crates/cargo-lipo">cargo lipo</a> to create a universal iOS library and 
+<a href="https://crates.io/crates/cbindgen">cbindgen</a> to create C headers.</p>
+<pre style="background-color:#2b303b;">
+<code class="language-bash" data-lang="bash"><span style="color:#bf616a;">cargo</span><span style="color:#c0c5ce;"> install cargo-lipo
+</span><span style="color:#bf616a;">cargo</span><span style="color:#c0c5ce;"> install cbindgen
+</span></code></pre><h2 id="ios-bindings">iOS Bindings</h2>
+<p>Create a new rust library for the iOS bindings inside  the <code>/cross-platform-rust-database-access</code> directory</p>
+<pre style="background-color:#2b303b;">
+<code class="language-bash" data-lang="bash"><span style="color:#bf616a;">cargo</span><span style="color:#c0c5ce;"> new rust-ios</span><span style="color:#bf616a;"> --lib
+</span></code></pre>
+<p>Update the <code>cargo.toml</code> file and set the crate type to dynamic system library and a static system library. Also, include
+<code>rust-core</code> as a dependency.</p>
+<pre style="background-color:#2b303b;">
+<code class="language-toml" data-lang="toml"><span style="color:#c0c5ce;">[lib]
+</span><span style="color:#bf616a;">crate-type </span><span style="color:#c0c5ce;">= [&quot;</span><span style="color:#a3be8c;">staticlib</span><span style="color:#c0c5ce;">&quot;, &quot;</span><span style="color:#a3be8c;">cdylib</span><span style="color:#c0c5ce;">&quot;]
+
+[dependencies]
+</span><span style="color:#bf616a;">rust-core </span><span style="color:#c0c5ce;">= {</span><span style="color:#bf616a;">path</span><span style="color:#c0c5ce;">= &quot;</span><span style="color:#a3be8c;">../rust-core</span><span style="color:#c0c5ce;">&quot;}
+</span></code></pre>
+<p>Update <code>src/lib.rs</code> wth the code below.  The binding expects a parameter for the database path, so it can be provided to
+rust-core </p>
+<pre style="background-color:#2b303b;">
+<code class="language-rust" data-lang="rust"><span style="color:#b48ead;">use </span><span style="color:#c0c5ce;">std::os::raw::{</span><span style="color:#b48ead;">c_char</span><span style="color:#c0c5ce;">};
+</span><span style="color:#b48ead;">use </span><span style="color:#c0c5ce;">std::ffi::{CString, CStr};
+</span><span style="color:#b48ead;">use </span><span style="color:#c0c5ce;">rust_core::database_test;
+
+#[</span><span style="color:#bf616a;">no_mangle</span><span style="color:#c0c5ce;">]
+</span><span style="color:#b48ead;">pub extern fn </span><span style="color:#8fa1b3;">call_database</span><span style="color:#c0c5ce;">(</span><span style="color:#bf616a;">to</span><span style="color:#c0c5ce;">: </span><span style="color:#b48ead;">*const</span><span style="color:#c0c5ce;"> c_char) -&gt; </span><span style="color:#b48ead;">*mut</span><span style="color:#c0c5ce;"> c_char {
+    </span><span style="color:#b48ead;">let c_str </span><span style="color:#c0c5ce;">= </span><span style="color:#b48ead;">unsafe </span><span style="color:#c0c5ce;">{ CStr::from_ptr(to) };
+
+    </span><span style="color:#b48ead;">let</span><span style="color:#c0c5ce;"> database_path = </span><span style="color:#b48ead;">c_str</span><span style="color:#c0c5ce;">.</span><span style="color:#96b5b4;">to_str</span><span style="color:#c0c5ce;">().</span><span style="color:#96b5b4;">unwrap</span><span style="color:#c0c5ce;">().</span><span style="color:#96b5b4;">to_string</span><span style="color:#c0c5ce;">();
+    </span><span style="color:#b48ead;">let</span><span style="color:#c0c5ce;"> database_result = </span><span style="color:#96b5b4;">database_test</span><span style="color:#c0c5ce;">(database_path);
+
+    CString::new(database_result).</span><span style="color:#96b5b4;">unwrap</span><span style="color:#c0c5ce;">().</span><span style="color:#96b5b4;">into_raw</span><span style="color:#c0c5ce;">()
+}
+
+#[</span><span style="color:#bf616a;">no_mangle</span><span style="color:#c0c5ce;">]
+</span><span style="color:#b48ead;">pub extern fn </span><span style="color:#8fa1b3;">call_database_free</span><span style="color:#c0c5ce;">(</span><span style="color:#bf616a;">s</span><span style="color:#c0c5ce;">: </span><span style="color:#b48ead;">*mut</span><span style="color:#c0c5ce;"> c_char) {
+    </span><span style="color:#b48ead;">unsafe </span><span style="color:#c0c5ce;">{
+        </span><span style="color:#b48ead;">if</span><span style="color:#c0c5ce;"> s.</span><span style="color:#96b5b4;">is_null</span><span style="color:#c0c5ce;">() { </span><span style="color:#b48ead;">return </span><span style="color:#c0c5ce;">}
+        CString::from_raw(s)
+    };
+}
+</span></code></pre>
+<p>Next, build the library and create the corresponding header files.</p>
+<pre style="background-color:#2b303b;">
+<code><span style="color:#c0c5ce;">cbindgen src/lib.rs -l c &gt; rust-ios.h
+cargo lipo --release
+</span></code></pre><h1 id="ios-app">iOS App</h1>
+<p>Open up Xcode to create a new App using the Storyboard interface and name it ios.</p>
+<p>Update the ViewController with the following code.  It gets the path to store the SQLite database file, calls the 
+database, and prints the result out to the logs.</p>
+<pre style="background-color:#2b303b;">
+<code class="language-swift" data-lang="swift"><span style="color:#b48ead;">import </span><span style="color:#c0c5ce;">UIKit
+
+</span><span style="color:#b48ead;">class</span><span style="color:#c0c5ce;"> ViewController: UIViewController {
+
+    </span><span style="color:#b48ead;">override func </span><span style="color:#c0c5ce;">viewDidLoad() {
+        </span><span style="color:#b48ead;">super</span><span style="color:#c0c5ce;">.viewDidLoad()
+        </span><span style="color:#65737e;">// Do any additional setup after loading the view.
+        
+        </span><span style="color:#b48ead;">let</span><span style="color:#c0c5ce;"> dirPaths = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, </span><span style="color:#b48ead;">true</span><span style="color:#c0c5ce;">)
+
+        </span><span style="color:#b48ead;">let</span><span style="color:#c0c5ce;"> result = call_database(dirPaths[</span><span style="color:#d08770;">0</span><span style="color:#c0c5ce;">] + </span><span style="color:#a3be8c;">&quot;/database.sqlite&quot;</span><span style="color:#c0c5ce;">)
+        </span><span style="color:#b48ead;">let</span><span style="color:#c0c5ce;"> query_result = String(cString: result!)
+        call_database_free(UnsafeMutablePointer(</span><span style="color:#b48ead;">mutating</span><span style="color:#c0c5ce;">: result))
+        print(query_result)
+    }
+}
+</span></code></pre>
+<p>Copy over the binary library and header files from rust-ios to the ios project.</p>
+<pre style="background-color:#2b303b;">
+<code class="language-bash" data-lang="bash"><span style="color:#65737e;"># inside the ios project directory
+</span><span style="color:#bf616a;">mkdir -p</span><span style="color:#c0c5ce;"> rust-ios/libs
+</span><span style="color:#bf616a;">mkdir -p</span><span style="color:#c0c5ce;"> rust-ios/include
+
+</span><span style="color:#96b5b4;">cd</span><span style="color:#c0c5ce;"> ../
+
+</span><span style="color:#bf616a;">cp</span><span style="color:#c0c5ce;"> rust-ios/rust-ios.h ios/rust-ios/include
+</span><span style="color:#bf616a;">cp</span><span style="color:#c0c5ce;"> rust-ios/target/universal/release/librust_ios.a ios/rust-ios/libs
+</span></code></pre>
+<p>Add <code>librust_ios.a</code> under Frameworks, Libraries, and Embedded Content in your iOS project.</p>
+<img loading="lazy" alt="Xcode application settings for Frameworks, Libraries, and Embedded Content" src="https:&#x2F;&#x2F;logankeenan.com&#x2F;processed_images&#x2F;4df6e7eb9b19373400.png">
+<p>Set the Header Search Paths to <code>ios/rust-ios/include</code> and Library Search Paths and <code>ios/rust-ios/libs</code>.</p>
+<img loading="lazy" alt="Xcode application settings for Header Search Paths and Library Search Paths" src="https:&#x2F;&#x2F;logankeenan.com&#x2F;processed_images&#x2F;47ce22b3fa4bd30300.png">
+<p>Set the Objective-C Bridging Header to <code>ios/rust-ios/include/rust-ios.h</code>.</p>
+<img loading="lazy" alt="Xcode application settings for Objective-C Bridging Header" src="https:&#x2F;&#x2F;logankeenan.com&#x2F;processed_images&#x2F;60fd58c1e33ff6d900.png">
+<p>Finally, run or debug the app to see the database call result in the logs.</p>
+<img loading="lazy" alt="Xcode log output: Person { id: 1, name: &#x27;Ada Lovelace&#x27; } " src="https:&#x2F;&#x2F;logankeenan.com&#x2F;processed_images&#x2F;3359ce1de1ecc8a800.png">
+<p>Congratulations, an iOS app is now calling Rust to access a SQLite database! Check out the rust-ios 
+<a href="https://github.com/logankeenan/cross-platform-rust-database-access/tree/main/rust-ios">source</a> and ios 
+<a href="https://github.com/logankeenan/cross-platform-rust-database-access/tree/main/ios">source</a>.</p>
+<p>Lots of credit goes to <a href="https://visly.app/blog/rust-on-ios">Emil Sjölander</a> for help with the bindings and iOS project setup.</p>
+
+
+</body>
+</html>

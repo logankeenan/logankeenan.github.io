@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description"
+          content="Programmatically add Javascript Polyfills with Rails 6 to prevent loading unneeded javascript files.">
+    <title>Logan Keenan - Programmatically add Javascript Polyfills with Rails 6</title>
+    <link href="/css/styles.css" rel="stylesheet" />
+</head>
+<body>
+<nav class="main-nav">
+    <a href="/">Home</a>
+    <a target="_blank" href="https://cultivatedsoftware.com">Hire Me</a>
+    <a href="/talks">Talks</a>
+</nav>
+
+<h1>
+    Programmatically add Javascript Polyfills with Rails 6
+</h1>
+<time datetime="2019-10-25">
+    October 25, 2019
+</time>
+<p>Including polyfills in the application.js file forces users who have the most update-to-date browsers to download,
+parse, and executed javascript they do not need. Programmatically fetching polyfills allows the application.js
+file to be as small as possible; reducing parse and execution times of Javascript.</p>
+<h2 id="including-the-polyfills-as-packs">Including the Polyfills as packs.</h2>
+<p>In this example, where going to setup polyfills for Promise and window.fetch. We'll start by adding a polyfill
+from npm.</p>
+<pre style="background-color:#2b303b;">
+<code class="language-bash" data-lang="bash"><span style="color:#bf616a;">yarn</span><span style="color:#c0c5ce;"> add whatwg-fetch promise-polyfill
+</span></code></pre>
+<p>Create a pack for the promise polyfill at /app/javascript/packs/polyfills/promise.js</p>
+<pre style="background-color:#2b303b;">
+<code class="language-js" data-lang="js"><span style="color:#b48ead;">import </span><span style="color:#c0c5ce;">&#39;</span><span style="color:#a3be8c;">promise-polyfill/src/polyfill</span><span style="color:#c0c5ce;">&#39;
+</span></code></pre>
+<p>Create a pack for the fetch polyfill at /app/javascript/packs/polyfills/fetch.js</p>
+<pre style="background-color:#2b303b;">
+<code class="language-js" data-lang="js"><span style="color:#b48ead;">import </span><span style="color:#c0c5ce;">&#39;</span><span style="color:#a3be8c;">whatwg-fetch</span><span style="color:#c0c5ce;">&#39;    
+</span></code></pre><h2 id="adding-the-polyfills-to-the-application-html-erb-file">Adding the polyfills to the application.html.erb file</h2>
+<p>For most cases, the polyfills need to be loaded above the application.js file because it might need to use them
+during application.js execution. We'll create a script that will be executed as the page is loaded and if a
+polyfill does not exist then it'll add the appropriate polyfill script file. The polyfill will be
+downloaded, parsed, and executed before the application.js.</p>
+<pre style="background-color:#2b303b;">
+<code class="language-html" data-lang="html"><span style="color:#c0c5ce;">&lt;</span><span style="color:#bf616a;">head</span><span style="color:#c0c5ce;">&gt;
+    </span><span style="color:#65737e;">&lt;!-- other head content --&gt;
+
+    </span><span style="color:#c0c5ce;">&lt;</span><span style="color:#bf616a;">script</span><span style="color:#c0c5ce;">&gt;
+        window.fetch || document.</span><span style="color:#bf616a;">write</span><span style="color:#c0c5ce;">(&#39;</span><span style="color:#a3be8c;">&lt;script src=&quot;&lt;%= asset_pack_path(</span><span style="color:#c0c5ce;">&#39;</span><span style="color:#bf616a;">polyfills</span><span style="color:#c0c5ce;">/</span><span style="color:#bf616a;">fetch</span><span style="color:#c0c5ce;">.js&#39;</span><span style="color:#a3be8c;">) %&gt;&quot;&gt;&lt;</span><span style="color:#96b5b4;">\/</span><span style="color:#a3be8c;">script&gt;</span><span style="color:#c0c5ce;">&#39;);
+        window.Promise || document.</span><span style="color:#bf616a;">write</span><span style="color:#c0c5ce;">(&#39;</span><span style="color:#a3be8c;">&lt;script src=&quot;&lt;%= asset_pack_path(</span><span style="color:#c0c5ce;">&#39;</span><span style="color:#bf616a;">polyfills</span><span style="color:#c0c5ce;">/</span><span style="color:#bf616a;">promise</span><span style="color:#c0c5ce;">.js&#39;</span><span style="color:#a3be8c;">) %&gt;&quot;&gt;&lt;</span><span style="color:#96b5b4;">\/</span><span style="color:#a3be8c;">script&gt;</span><span style="color:#c0c5ce;">&#39;);
+    &lt;/</span><span style="color:#bf616a;">script</span><span style="color:#c0c5ce;">&gt;
+    &lt;%= javascript_pack_tag &#39;application&#39;, &#39;data-turbolinks-track&#39;: &#39;reload&#39; %&gt;
+
+    </span><span style="color:#65737e;">&lt;!-- other head content --&gt;
+</span><span style="color:#c0c5ce;">&lt;/</span><span style="color:#bf616a;">head</span><span style="color:#c0c5ce;">&gt;   
+</span></code></pre>
+<p><a href="https://github.com/logankeenan/programmatically-add-javascript-polyfills-rails-6">Source Code</a></p>
+
+
+</body>
+</html>

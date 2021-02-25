@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description"
+          content="Running a Rust Web Server with Actix web and Handlebar templates">
+    <title>Logan Keenan - Running a Rust Web Server</title>
+    <link href="/css/styles.css" rel="stylesheet" />
+</head>
+<body>
+<nav class="main-nav">
+    <a href="/">Home</a>
+    <a target="_blank" href="https://cultivatedsoftware.com">Hire Me</a>
+    <a href="/talks">Talks</a>
+</nav>
+
+<h1>
+    Running a Rust Web Server
+</h1>
+<time datetime="2019-11-29T00:00:01Z">
+    November 29, 2019
+</time>
+<p>The first thing I want to do is get a web server running with Rust. I'm going to walk through installing Rust,
+creating a new project, using an Actix-Web server, and using Handlebar templates to render HTML.</p>
+<h2 id="installing-and-running-rust">Installing and Running Rust</h2>
+<p>First, the <a href="https://rustup.rs/">rustup</a> toolchain manager needs to be installed. Rustup is to Rust
+as rvm/rbenv is to Ruby, nvm to Node, etc... Run the command below and it'll also install Rustup and the latest
+stable version of Rust.</p>
+<pre style="background-color:#2b303b;">
+<code class="language-shell" data-lang="shell"><span style="color:#c0c5ce;">$ curl --proto &#39;=https&#39; --tlsv1.2 -sSf https://sh.rustup.rs | sh
+</span></code></pre>
+<p>Afterwards, you should be able to check the installed version of Rust and Cargo.  <a href="https://doc.rust-lang.org/cargo/guide/">Cargo</a> is the package manager;
+think of it like npm, gem, etc...</p>
+<pre style="background-color:#2b303b;">
+<code class="language-shell" data-lang="shell"><span style="color:#c0c5ce;">$ rustc --version
+rustc 1.39.0 (4560ea788 2019-11-04)
+$ cargo --version
+cargo 1.39.0 (1c6ec66d5 2019-09-30)
+</span></code></pre><h2 id="creating-your-first-rust-program">Creating your First Rust Program</h2>
+<p>Create a new directory for your project. In this case, create a directory called
+&quot;running-a-rust-web-server&quot;. Change into the newly created directory and run <code>cargo init</code>. This will create the
+basic files
+needed for a Rust app. Plenty of resources exist that go into detail about what initially gets
+created, so I wont do that here. Next, run the application with <code>cargo run</code> and view it's output.</p>
+<pre style="background-color:#2b303b;">
+<code class="language-shell" data-lang="shell"><span style="color:#c0c5ce;">$ mkdir running-a-rust-web-server
+$ cd running-a-rust-web-server
+$ cargo init
+Created binary (application) package
+$ cargo run
+Hello, world!
+</span></code></pre><h2 id="creating-a-web-server">Creating a Web Server</h2>
+<p>Rust has a few different web frameworks to choose from which can be viewed
+<a href="https://www.arewewebyet.org/topics/frameworks/">here</a>. I've chosen to use <a href="https://github.com/actix/actix-web">Actix-Web</a>.
+Open the Cargo.toml file and add Actix-Web. It should look similar to the file below</p>
+<pre style="background-color:#2b303b;">
+<code class="language-toml" data-lang="toml"><span style="color:#c0c5ce;">[package]
+</span><span style="color:#bf616a;">name </span><span style="color:#c0c5ce;">= &quot;</span><span style="color:#a3be8c;">running-a-rust-web-server</span><span style="color:#c0c5ce;">&quot;
+</span><span style="color:#bf616a;">version </span><span style="color:#c0c5ce;">= &quot;</span><span style="color:#a3be8c;">0.1.0</span><span style="color:#c0c5ce;">&quot;
+</span><span style="color:#bf616a;">authors </span><span style="color:#c0c5ce;">= [&quot;</span><span style="color:#a3be8c;">Logan Keenan</span><span style="color:#c0c5ce;">&quot;]
+</span><span style="color:#bf616a;">edition </span><span style="color:#c0c5ce;">= &quot;</span><span style="color:#a3be8c;">2018</span><span style="color:#c0c5ce;">&quot;
+
+</span><span style="color:#65737e;"># See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+</span><span style="color:#c0c5ce;">[dependencies]
+</span><span style="color:#bf616a;">actix-web </span><span style="color:#c0c5ce;">= &quot;</span><span style="color:#a3be8c;">1.0.9</span><span style="color:#c0c5ce;">&quot;
+</span></code></pre>
+<p>You can install your projects dependencies with <code>cargo fetch</code>. Cargo will also install
+dependencies when you build (<code>cargo build</code>). Note for javascript devs, dependencies are not download at a project
+level. They are downloaded once per version of Rust. Once dependencies have been fetched then the Cargo.lock
+file
+is updated automatically.</p>
+<p>Actix-Web has made it super easy to get started. Their <a href="https://actix.rs/">home page</a>
+has some great sample code which we'll use too. Copy the code below to your src/main.rs file and start your Rust
+web server (<code>cargo run</code>). You should be able to visit <a href="http://localhost:8000">http://localhost:8000</a> and see Hello World.</p>
+<pre style="background-color:#2b303b;">
+<code class="language-rust" data-lang="rust"><span style="color:#b48ead;">use </span><span style="color:#c0c5ce;">actix_web::{web, App, HttpRequest, HttpServer, Responder};
+
+</span><span style="color:#b48ead;">fn </span><span style="color:#8fa1b3;">greet</span><span style="color:#c0c5ce;">(</span><span style="color:#bf616a;">req</span><span style="color:#c0c5ce;">: HttpRequest) -&gt; impl Responder {
+    </span><span style="color:#b48ead;">let</span><span style="color:#c0c5ce;"> name = req.</span><span style="color:#96b5b4;">match_info</span><span style="color:#c0c5ce;">().</span><span style="color:#96b5b4;">get</span><span style="color:#c0c5ce;">(&quot;</span><span style="color:#a3be8c;">name</span><span style="color:#c0c5ce;">&quot;).</span><span style="color:#96b5b4;">unwrap_or</span><span style="color:#c0c5ce;">(&quot;</span><span style="color:#a3be8c;">World</span><span style="color:#c0c5ce;">&quot;);
+    format!(&quot;</span><span style="color:#a3be8c;">Hello </span><span style="color:#d08770;">{}</span><span style="color:#a3be8c;">!</span><span style="color:#c0c5ce;">&quot;, &amp;name)
+}
+
+</span><span style="color:#b48ead;">fn </span><span style="color:#8fa1b3;">main</span><span style="color:#c0c5ce;">() {
+    HttpServer::new(|| {
+        App::new()
+            .</span><span style="color:#96b5b4;">route</span><span style="color:#c0c5ce;">(&quot;</span><span style="color:#a3be8c;">/</span><span style="color:#c0c5ce;">&quot;, web::get().</span><span style="color:#96b5b4;">to</span><span style="color:#c0c5ce;">(greet))
+            .</span><span style="color:#96b5b4;">route</span><span style="color:#c0c5ce;">(&quot;</span><span style="color:#a3be8c;">/{name}</span><span style="color:#c0c5ce;">&quot;, web::get().</span><span style="color:#96b5b4;">to</span><span style="color:#c0c5ce;">(greet))
+    })
+    .</span><span style="color:#96b5b4;">bind</span><span style="color:#c0c5ce;">(&quot;</span><span style="color:#a3be8c;">127.0.0.1:8000</span><span style="color:#c0c5ce;">&quot;)
+    .</span><span style="color:#96b5b4;">expect</span><span style="color:#c0c5ce;">(&quot;</span><span style="color:#a3be8c;">Can not bind to port 8000</span><span style="color:#c0c5ce;">&quot;)
+    .</span><span style="color:#96b5b4;">run</span><span style="color:#c0c5ce;">()
+    .</span><span style="color:#96b5b4;">unwrap</span><span style="color:#c0c5ce;">();
+}
+</span></code></pre><h2 id="rendering-html-with-handlebar-templates">Rendering HTML with Handlebar templates</h2>
+<p>I decided to go with <a href="href=%22https://crates.io/crates/handlebars">Handlebars</a> because it's a really simple
+templating language. We'll create a layout page which all other pages can use and then an
+index page which will be served at the root (<a href="http://localhost:8000">http://localhost:8000</a>).</p>
+<ul>
+<li>Add <code>handlebars = &quot;2.0.2&quot;</code> to you dependencies in the Cargo.toml file</li>
+<li>Create a file called &quot;./running-a-rust-web-server/src/templates/index.hbs&quot;</li>
+<li>Create a file called &quot;./running-a-rust-web-server/src/templates/layout_page.hbs&quot;</li>
+<li>Copy/paste the contents below into the newly created files.</li>
+</ul>
+<pre style="background-color:#2b303b;">
+<code class="language-handlebars" data-lang="handlebars"><span style="color:#65737e;">&lt;!--running-a-rust-web-server/src/templates/index.hbs--&gt;
+
+</span><span style="color:#c0c5ce;">{{#&gt; </span><span style="color:#bf616a;">layout_page</span><span style="color:#c0c5ce;">}}
+{{#*</span><span style="color:#bf616a;">inline </span><span style="color:#c0c5ce;">&quot;</span><span style="color:#a3be8c;">page_content</span><span style="color:#c0c5ce;">&quot;}}
+    &lt;</span><span style="color:#bf616a;">p</span><span style="color:#c0c5ce;">&gt;
+        {{</span><span style="color:#bf616a;">paragraph_text</span><span style="color:#c0c5ce;">}}
+    &lt;/</span><span style="color:#bf616a;">p</span><span style="color:#c0c5ce;">&gt;
+{{/inline}}
+{{/layout_page}}
+</span></code></pre><pre style="background-color:#2b303b;">
+<code class="language-handlebars" data-lang="handlebars"><span style="color:#65737e;">&lt;!--running-a-rust-web-server/src/templates/layout_page.hbs--&gt;
+
+</span><span style="color:#c0c5ce;">&lt;!</span><span style="color:#bf616a;">DOCTYPE</span><span style="color:#c0c5ce;"> html&gt;
+&lt;</span><span style="color:#bf616a;">html </span><span style="color:#d08770;">lang=</span><span style="color:#c0c5ce;">&quot;</span><span style="color:#a3be8c;">en</span><span style="color:#c0c5ce;">&quot;&gt;
+&lt;</span><span style="color:#bf616a;">head</span><span style="color:#c0c5ce;">&gt;
+    &lt;</span><span style="color:#bf616a;">meta </span><span style="color:#d08770;">charset=</span><span style="color:#c0c5ce;">&quot;</span><span style="color:#a3be8c;">UTF-8</span><span style="color:#c0c5ce;">&quot;&gt;
+    &lt;</span><span style="color:#bf616a;">title</span><span style="color:#c0c5ce;">&gt;Rust Web Server Example&lt;/</span><span style="color:#bf616a;">title</span><span style="color:#c0c5ce;">&gt;
+&lt;/</span><span style="color:#bf616a;">head</span><span style="color:#c0c5ce;">&gt;
+&lt;</span><span style="color:#bf616a;">body</span><span style="color:#c0c5ce;">&gt;
+        {{&gt; </span><span style="color:#bf616a;">page_content</span><span style="color:#c0c5ce;">}}
+&lt;/</span><span style="color:#bf616a;">body</span><span style="color:#c0c5ce;">&gt;
+&lt;/</span><span style="color:#bf616a;">html</span><span style="color:#c0c5ce;">&gt;
+</span></code></pre>
+<p>Next we need to update our src/main.rs file. The root route is going to register the directory containing the
+Handlebar templates and then pass data to the index template to render. The src/main.rs file should look like
+the code below. Now you should be able to start the server (<code>cargo run</code>) and view the rendered html!</p>
+<pre style="background-color:#2b303b;">
+<code class="language-rust" data-lang="rust"><span style="color:#b48ead;">use </span><span style="color:#c0c5ce;">actix_web::{web, App, HttpRequest, HttpServer, HttpResponse};
+</span><span style="color:#b48ead;">use </span><span style="color:#c0c5ce;">handlebars::Handlebars;
+</span><span style="color:#b48ead;">use </span><span style="color:#c0c5ce;">std::collections::BTreeMap;
+
+</span><span style="color:#b48ead;">fn </span><span style="color:#8fa1b3;">root</span><span style="color:#c0c5ce;">(</span><span style="color:#bf616a;">_req</span><span style="color:#c0c5ce;">: HttpRequest) -&gt; HttpResponse {
+    </span><span style="color:#b48ead;">let mut</span><span style="color:#c0c5ce;"> handlebars = Handlebars::new();
+    handlebars
+        .</span><span style="color:#96b5b4;">register_templates_directory</span><span style="color:#c0c5ce;">(&quot;</span><span style="color:#a3be8c;">.hbs</span><span style="color:#c0c5ce;">&quot;, &quot;</span><span style="color:#a3be8c;">./src/templates</span><span style="color:#c0c5ce;">&quot;)
+        .</span><span style="color:#96b5b4;">unwrap</span><span style="color:#c0c5ce;">();
+
+    </span><span style="color:#b48ead;">let mut</span><span style="color:#c0c5ce;"> data = BTreeMap::new();
+    data.</span><span style="color:#96b5b4;">insert</span><span style="color:#c0c5ce;">(&quot;</span><span style="color:#a3be8c;">paragraph_text</span><span style="color:#c0c5ce;">&quot;, &quot;</span><span style="color:#a3be8c;">This page was rendered using Actix-Web as the web server and handlebars as the templating language!</span><span style="color:#c0c5ce;">&quot;);
+
+    </span><span style="color:#b48ead;">let</span><span style="color:#c0c5ce;"> body = handlebars.</span><span style="color:#96b5b4;">render</span><span style="color:#c0c5ce;">(&quot;</span><span style="color:#a3be8c;">index</span><span style="color:#c0c5ce;">&quot;, &amp;data).</span><span style="color:#96b5b4;">unwrap</span><span style="color:#c0c5ce;">();
+
+    HttpResponse::Ok().</span><span style="color:#96b5b4;">body</span><span style="color:#c0c5ce;">(body)
+}
+
+</span><span style="color:#b48ead;">fn </span><span style="color:#8fa1b3;">main</span><span style="color:#c0c5ce;">() {
+    HttpServer::new(|| {
+        App::new()
+            .</span><span style="color:#96b5b4;">route</span><span style="color:#c0c5ce;">(&quot;</span><span style="color:#a3be8c;">/</span><span style="color:#c0c5ce;">&quot;, web::get().</span><span style="color:#96b5b4;">to</span><span style="color:#c0c5ce;">(root))
+    })
+        .</span><span style="color:#96b5b4;">bind</span><span style="color:#c0c5ce;">(&quot;</span><span style="color:#a3be8c;">127.0.0.1:8000</span><span style="color:#c0c5ce;">&quot;)
+        .</span><span style="color:#96b5b4;">expect</span><span style="color:#c0c5ce;">(&quot;</span><span style="color:#a3be8c;">Can not bind to port 8000</span><span style="color:#c0c5ce;">&quot;)
+        .</span><span style="color:#96b5b4;">run</span><span style="color:#c0c5ce;">()
+        .</span><span style="color:#96b5b4;">unwrap</span><span style="color:#c0c5ce;">();
+}
+</span></code></pre>
+<p><a href="https://github.com/logankeenan/running-a-rust-web-server">Source Code</a></p>
+
+
+</body>
+</html>

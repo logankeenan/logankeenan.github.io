@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description"
+          content="How to make an HTTP request in Rust and cross-compile it for Node.js, iOS, and Android">
+    <title>Logan Keenan - Cross-Platform Rust: HTTP Request</title>
+    <link href="/css/styles.css" rel="stylesheet" />
+</head>
+<body>
+<nav class="main-nav">
+    <a href="/">Home</a>
+    <a target="_blank" href="https://cultivatedsoftware.com">Hire Me</a>
+    <a href="/talks">Talks</a>
+</nav>
+
+<h1>
+    Cross-Platform Rust: HTTP Request
+</h1>
+<time datetime="2020-10-28">
+    October 28, 2020
+</time>
+<p>This post will take a look at what's needed to make an HTTP request in Rust using 
+<a href="https://crates.io/crates/reqwest">reqwest</a> and then cross-compile to iOS, Android, and Node.js. Start by cloning 
+the mono-repo created from the 
+<a href="https://github.com/logankeenan/cross-platform-rust-database-access">Cross Platform Rust: Database Access</a> blog series. </p>
+<h2 id="cross-compiling">Cross-Compiling</h2>
+<p>The repo has been updated to include scripts for building each platform independently, as well as together.  Run the 
+build script to ensure everything is working properly.</p>
+<pre style="background-color:#2b303b;">
+<code class="language-bash" data-lang="bash"><span style="color:#96b5b4;">cd</span><span style="color:#c0c5ce;"> cross-platform-rust-database-access
+</span><span style="color:#96b5b4;">.</span><span style="color:#c0c5ce;"> ./scripts/build.sh
+</span></code></pre>
+<p>The Android build script needs to be undated in order to build <em>reqwest</em>. Set the TARGET_AR and TARGET_CC environment 
+variables to point to the appropriate toolchain. </p>
+<pre style="background-color:#2b303b;">
+<code class="language-bash" data-lang="bash"><span style="color:#bf616a;">TARGET_AR</span><span style="color:#c0c5ce;">=</span><span style="color:#a3be8c;">/Users/logan/.NDK/arm64/bin/aarch64-linux-android-ar
+</span><span style="color:#bf616a;">TARGET_CC</span><span style="color:#c0c5ce;">=</span><span style="color:#a3be8c;">/Users/logan/.NDK/arm64/bin/aarch64-linux-android-clang
+</span><span style="color:#bf616a;">cargo</span><span style="color:#c0c5ce;"> build</span><span style="color:#bf616a;"> --target</span><span style="color:#c0c5ce;"> aarch64-linux-android</span><span style="color:#bf616a;"> --release
+
+TARGET_AR</span><span style="color:#c0c5ce;">=</span><span style="color:#a3be8c;">/Users/logan/.NDK/arm/bin/arm-linux-androideabi-ar
+</span><span style="color:#bf616a;">TARGET_CC</span><span style="color:#c0c5ce;">=</span><span style="color:#a3be8c;">/Users/logan/.NDK/arm/bin/arm-linux-androideabi-clang
+</span><span style="color:#bf616a;">cargo</span><span style="color:#c0c5ce;"> build</span><span style="color:#bf616a;"> --target</span><span style="color:#c0c5ce;"> armv7-linux-androideabi</span><span style="color:#bf616a;"> --release
+
+TARGET_AR</span><span style="color:#c0c5ce;">=</span><span style="color:#a3be8c;">/Users/logan/.NDK/x86/bin/i686-linux-android-ar
+</span><span style="color:#bf616a;">TARGET_CC</span><span style="color:#c0c5ce;">=</span><span style="color:#a3be8c;">/Users/logan/.NDK/x86/bin/i686-linux-android-clang
+</span><span style="color:#bf616a;">cargo</span><span style="color:#c0c5ce;"> build</span><span style="color:#bf616a;"> --target</span><span style="color:#c0c5ce;"> i686-linux-android</span><span style="color:#bf616a;"> --release
+</span></code></pre><h2 id="rust-core">Rust Core</h2>
+<p>Update the rust-core/cargo.toml to include the <em>reqwest</em> dependency.  Be sure to remove the <em>rusqlite</em> dependency.</p>
+<pre style="background-color:#2b303b;">
+<code class="language-toml" data-lang="toml"><span style="color:#c0c5ce;">[dependencies]
+</span><span style="color:#bf616a;">reqwest </span><span style="color:#c0c5ce;">= { </span><span style="color:#bf616a;">version </span><span style="color:#c0c5ce;">= &quot;</span><span style="color:#a3be8c;">0.10</span><span style="color:#c0c5ce;">&quot;, </span><span style="color:#bf616a;">default-features </span><span style="color:#c0c5ce;">= </span><span style="color:#d08770;">false</span><span style="color:#c0c5ce;">, </span><span style="color:#bf616a;">features </span><span style="color:#c0c5ce;">= [&quot;</span><span style="color:#a3be8c;">json</span><span style="color:#c0c5ce;">&quot;, &quot;</span><span style="color:#a3be8c;">rustls-tls</span><span style="color:#c0c5ce;">&quot;, &quot;</span><span style="color:#a3be8c;">blocking</span><span style="color:#c0c5ce;">&quot;] }
+</span></code></pre>
+<p>Update rust-core/src/lib.rs with the code below.  It makes an HTTP request to get the current IP address and 
+returns the result as a JSON string.</p>
+<pre style="background-color:#2b303b;">
+<code class="language-rust" data-lang="rust"><span style="color:#b48ead;">use </span><span style="color:#c0c5ce;">std::collections::HashMap;
+
+</span><span style="color:#b48ead;">pub fn </span><span style="color:#8fa1b3;">http_request</span><span style="color:#c0c5ce;">() -&gt; String {
+    </span><span style="color:#b48ead;">let</span><span style="color:#c0c5ce;"> client = reqwest::blocking::Client::new();
+    </span><span style="color:#b48ead;">let</span><span style="color:#c0c5ce;"> response = client.</span><span style="color:#96b5b4;">get</span><span style="color:#c0c5ce;">(&quot;</span><span style="color:#a3be8c;">https://httpbin.org/ip</span><span style="color:#c0c5ce;">&quot;).</span><span style="color:#96b5b4;">send</span><span style="color:#c0c5ce;">().</span><span style="color:#96b5b4;">unwrap</span><span style="color:#c0c5ce;">();
+    </span><span style="color:#b48ead;">let</span><span style="color:#c0c5ce;"> resp = response.json::&lt;HashMap&lt;String, String&gt;&gt;().</span><span style="color:#96b5b4;">unwrap</span><span style="color:#c0c5ce;">();
+    format!(&quot;</span><span style="color:#d08770;">{:#?}</span><span style="color:#c0c5ce;">&quot;, resp)
+}
+</span></code></pre><h2 id="node-js">Node.js</h2>
+<p>Update the bindings in nodejs/native/src/lib.rs to invoke the http_request method from rust-core.</p>
+<pre style="background-color:#2b303b;">
+<code class="language-rust" data-lang="rust"><span style="color:#b48ead;">use </span><span style="color:#c0c5ce;">neon::prelude::*;
+</span><span style="color:#b48ead;">use </span><span style="color:#c0c5ce;">rust_core::http_request;
+
+</span><span style="color:#b48ead;">fn </span><span style="color:#8fa1b3;">make_http_request</span><span style="color:#c0c5ce;">(</span><span style="color:#b48ead;">mut </span><span style="color:#bf616a;">cx</span><span style="color:#c0c5ce;">: FunctionContext) -&gt; JsResult&lt;JsString&gt; {
+    </span><span style="color:#b48ead;">let</span><span style="color:#c0c5ce;"> result = </span><span style="color:#96b5b4;">http_request</span><span style="color:#c0c5ce;">();
+    Ok(cx.</span><span style="color:#96b5b4;">string</span><span style="color:#c0c5ce;">(result))
+}
+
+register_module!(</span><span style="color:#b48ead;">mut</span><span style="color:#c0c5ce;"> cx, {
+    cx.</span><span style="color:#96b5b4;">export_function</span><span style="color:#c0c5ce;">(&quot;</span><span style="color:#a3be8c;">make_http_request</span><span style="color:#c0c5ce;">&quot;, make_http_request)
+});
+</span></code></pre>
+<p>Also, update the nodejs/lib/index.js to call the new binding.</p>
+<pre style="background-color:#2b303b;">
+<code class="language-js" data-lang="js"><span style="color:#b48ead;">var </span><span style="color:#bf616a;">addon </span><span style="color:#c0c5ce;">= </span><span style="color:#96b5b4;">require</span><span style="color:#c0c5ce;">(&#39;</span><span style="color:#a3be8c;">../native</span><span style="color:#c0c5ce;">&#39;);
+
+</span><span style="color:#ebcb8b;">console</span><span style="color:#c0c5ce;">.</span><span style="color:#96b5b4;">log</span><span style="color:#c0c5ce;">(</span><span style="color:#bf616a;">addon</span><span style="color:#c0c5ce;">.</span><span style="color:#8fa1b3;">make_http_request</span><span style="color:#c0c5ce;">());
+</span></code></pre>
+<p>Build for nodejs and run the node app to see the current IP address.</p>
+<pre style="background-color:#2b303b;">
+<code class="language-bash" data-lang="bash"><span style="color:#96b5b4;">.</span><span style="color:#c0c5ce;"> ./scripts/build-nodejs.sh 
+</span><span style="color:#bf616a;">node</span><span style="color:#c0c5ce;"> nodejs/lib/index.js
+</span><span style="color:#65737e;"># {
+#     &quot;origin&quot;: &quot;11.222.33.444&quot;,
+# }
+</span></code></pre><h2 id="android">Android</h2>
+<p>Update the rust-android bindings in rust-android/src/lib.rs to make the http request.</p>
+<pre style="background-color:#2b303b;">
+<code class="language-rust" data-lang="rust"><span style="color:#c0c5ce;">#![</span><span style="color:#bf616a;">cfg</span><span style="color:#c0c5ce;">(target_os = &quot;</span><span style="color:#a3be8c;">android</span><span style="color:#c0c5ce;">&quot;)]
+#![</span><span style="color:#bf616a;">allow</span><span style="color:#c0c5ce;">(non_snake_case)]
+
+</span><span style="color:#b48ead;">use </span><span style="color:#c0c5ce;">jni::JNIEnv;
+</span><span style="color:#b48ead;">use </span><span style="color:#c0c5ce;">jni::objects::{JObject};
+</span><span style="color:#b48ead;">use </span><span style="color:#c0c5ce;">jni::sys::{jstring};
+</span><span style="color:#b48ead;">use </span><span style="color:#c0c5ce;">rust_core::http_request;
+
+#[</span><span style="color:#bf616a;">no_mangle</span><span style="color:#c0c5ce;">]
+</span><span style="color:#b48ead;">pub unsafe extern fn </span><span style="color:#8fa1b3;">Java_com_example_android_MainActivity_makehttprequest</span><span style="color:#c0c5ce;">(</span><span style="color:#bf616a;">env</span><span style="color:#c0c5ce;">: JNIEnv, _: JObject) -&gt; jstring {
+    </span><span style="color:#b48ead;">let</span><span style="color:#c0c5ce;"> http_response = </span><span style="color:#96b5b4;">http_request</span><span style="color:#c0c5ce;">();
+
+    </span><span style="color:#b48ead;">let</span><span style="color:#c0c5ce;"> output = env.</span><span style="color:#96b5b4;">new_string</span><span style="color:#c0c5ce;">(http_response.</span><span style="color:#96b5b4;">to_owned</span><span style="color:#c0c5ce;">()).</span><span style="color:#96b5b4;">unwrap</span><span style="color:#c0c5ce;">();
+    output.</span><span style="color:#96b5b4;">into_inner</span><span style="color:#c0c5ce;">()
+}
+</span></code></pre>
+<p>Update the AndroidManifest.xml to allow the app to access the internet.</p>
+<pre style="background-color:#2b303b;">
+<code class="language-xml" data-lang="xml"><span style="color:#c0c5ce;">&lt;?</span><span style="color:#bf616a;">xml </span><span style="color:#d08770;">version</span><span style="color:#c0c5ce;">=&quot;</span><span style="color:#a3be8c;">1.0</span><span style="color:#c0c5ce;">&quot; </span><span style="color:#d08770;">encoding</span><span style="color:#c0c5ce;">=&quot;</span><span style="color:#a3be8c;">utf-8</span><span style="color:#c0c5ce;">&quot;?&gt;
+&lt;</span><span style="color:#bf616a;">manifest </span><span style="color:#d08770;">xmlns:android</span><span style="color:#c0c5ce;">=&quot;</span><span style="color:#a3be8c;">http://schemas.android.com/apk/res/android</span><span style="color:#c0c5ce;">&quot;
+    </span><span style="color:#d08770;">package</span><span style="color:#c0c5ce;">=&quot;</span><span style="color:#a3be8c;">com.example.android</span><span style="color:#c0c5ce;">&quot;&gt;
+
+    </span><span style="color:#65737e;">&lt;!--  other settings here  --&gt;
+
+    </span><span style="color:#c0c5ce;">&lt;</span><span style="color:#bf616a;">uses-permission </span><span style="color:#d08770;">android:name</span><span style="color:#c0c5ce;">=&quot;</span><span style="color:#a3be8c;">android.permission.INTERNET</span><span style="color:#c0c5ce;">&quot; /&gt;
+&lt;/</span><span style="color:#bf616a;">manifest</span><span style="color:#c0c5ce;">&gt;
+</span></code></pre>
+<p>Update the MainActivity.kt to invoke the binding.</p>
+<pre style="background-color:#2b303b;">
+<code class="language-kotlin" data-lang="kotlin"><span style="color:#b48ead;">class </span><span style="color:#ebcb8b;">MainActivity </span><span style="color:#c0c5ce;">: </span><span style="color:#a3be8c;">AppCompatActivity</span><span style="color:#c0c5ce;">() {
+    </span><span style="color:#b48ead;">override fun </span><span style="color:#8fa1b3;">onCreate</span><span style="color:#c0c5ce;">(savedInstanceState: Bundle?) {
+        </span><span style="color:#d08770;">super</span><span style="color:#c0c5ce;">.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        System.loadLibrary(&quot;</span><span style="color:#a3be8c;">rust_android</span><span style="color:#c0c5ce;">&quot;)
+        Log.d(&quot;</span><span style="color:#a3be8c;">rust</span><span style="color:#c0c5ce;">&quot;, makehttprequest())
+    }
+
+    external </span><span style="color:#b48ead;">fun </span><span style="color:#8fa1b3;">makehttprequest</span><span style="color:#c0c5ce;">(): </span><span style="color:#b48ead;">String
+</span><span style="color:#c0c5ce;">}
+</span></code></pre>
+<p>Debug or run the app and see the current IP address in the logs.</p>
+<img loading="lazy" alt="Android Studio logs showing ip address of device" src="https:&#x2F;&#x2F;logankeenan.com&#x2F;processed_images&#x2F;de0b941d7cb66d3f00.png">
+<h2 id="ios">iOS</h2>
+<p>Update the rust-ios bindings in rust-ios/src/lib.rs to make the http request.</p>
+<pre style="background-color:#2b303b;">
+<code class="language-rust" data-lang="rust"><span style="color:#b48ead;">use </span><span style="color:#c0c5ce;">std::os::raw::{</span><span style="color:#b48ead;">c_char</span><span style="color:#c0c5ce;">};
+</span><span style="color:#b48ead;">use </span><span style="color:#c0c5ce;">std::ffi::{CString};
+</span><span style="color:#b48ead;">use </span><span style="color:#c0c5ce;">rust_core::http_request;
+
+#[</span><span style="color:#bf616a;">no_mangle</span><span style="color:#c0c5ce;">]
+</span><span style="color:#b48ead;">pub extern fn </span><span style="color:#8fa1b3;">make_http_request</span><span style="color:#c0c5ce;">() -&gt; </span><span style="color:#b48ead;">*mut</span><span style="color:#c0c5ce;"> c_char {
+    </span><span style="color:#b48ead;">let</span><span style="color:#c0c5ce;"> response = </span><span style="color:#96b5b4;">http_request</span><span style="color:#c0c5ce;">();
+
+    CString::new(response).</span><span style="color:#96b5b4;">unwrap</span><span style="color:#c0c5ce;">().</span><span style="color:#96b5b4;">into_raw</span><span style="color:#c0c5ce;">()
+}
+
+#[</span><span style="color:#bf616a;">no_mangle</span><span style="color:#c0c5ce;">]
+</span><span style="color:#b48ead;">pub extern fn </span><span style="color:#8fa1b3;">make_http_request_free</span><span style="color:#c0c5ce;">(</span><span style="color:#bf616a;">s</span><span style="color:#c0c5ce;">: </span><span style="color:#b48ead;">*mut</span><span style="color:#c0c5ce;"> c_char) {
+    </span><span style="color:#b48ead;">unsafe </span><span style="color:#c0c5ce;">{
+        </span><span style="color:#b48ead;">if</span><span style="color:#c0c5ce;"> s.</span><span style="color:#96b5b4;">is_null</span><span style="color:#c0c5ce;">() { </span><span style="color:#b48ead;">return </span><span style="color:#c0c5ce;">}
+        CString::from_raw(s)
+    };
+}
+</span></code></pre>
+<p>Update the ViewController in the iOS app to invoke the binding.</p>
+<pre style="background-color:#2b303b;">
+<code class="language-swift" data-lang="swift"><span style="color:#b48ead;">class</span><span style="color:#c0c5ce;"> ViewController: UIViewController {
+
+    </span><span style="color:#b48ead;">override func </span><span style="color:#c0c5ce;">viewDidLoad() {
+        </span><span style="color:#b48ead;">super</span><span style="color:#c0c5ce;">.viewDidLoad()
+        </span><span style="color:#65737e;">// Do any additional setup after loading the view.
+
+        </span><span style="color:#b48ead;">let</span><span style="color:#c0c5ce;"> response_cString = make_http_request()
+        </span><span style="color:#b48ead;">let</span><span style="color:#c0c5ce;"> response = String(cString: response_cString!)
+        make_http_request_free(UnsafeMutablePointer(</span><span style="color:#b48ead;">mutating</span><span style="color:#c0c5ce;">: response_cString))
+        print(response)
+    }
+}
+</span></code></pre>
+<p>Run or Debug the app and see the current IP address in the logs.</p>
+<img loading="lazy" alt="Xcode logs showing ip address of device" src="https:&#x2F;&#x2F;logankeenan.com&#x2F;processed_images&#x2F;2f967d2c708b094700.png">
+<p>That's it! HTTP requests can be made in Rust and cross-compiled for iOS, Android, and Node.js.  An improvement on
+this could be to use async rather than a blocking HTTP call.</p>
+<p><a href="https://github.com/logankeenan/cross-platform-rust-http-request">Source</a></p>
+
+
+</body>
+</html>

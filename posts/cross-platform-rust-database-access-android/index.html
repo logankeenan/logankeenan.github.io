@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description"
+          content="A Rust library featuring SQLite database access integrated with Android">
+    <title>Logan Keenan - Cross-Platform Rust: Database Access with Android Integration</title>
+    <link href="/css/styles.css" rel="stylesheet" />
+</head>
+<body>
+<nav class="main-nav">
+    <a href="/">Home</a>
+    <a target="_blank" href="https://cultivatedsoftware.com">Hire Me</a>
+    <a href="/talks">Talks</a>
+</nav>
+
+<h1>
+    Cross-Platform Rust: Database Access with Android Integration
+</h1>
+<time datetime="2020-10-21">
+    October 21, 2020
+</time>
+<p>This post is part of a series of posts focused on 
+<a href="/posts/cross-platform-rust-database-access/">Cross-Platform Rust: Database Access</a>. 
+This post will cover integrating the rust-core library with Android.  You may also be interested in
+<a href="/posts/cross-platform-rust-database-access-nodejs">Cross-Platform Rust: Database Access with Node.js Integration</a>.</p>
+<h2 id="toolchains">Toolchains</h2>
+<p>Start by installing the required rust targets for Android</p>
+<pre style="background-color:#2b303b;">
+<code class="language-bash" data-lang="bash"><span style="color:#bf616a;">rustup</span><span style="color:#c0c5ce;"> target add aarch64-linux-android 
+</span><span style="color:#bf616a;">rustup</span><span style="color:#c0c5ce;"> target add armv7-linux-androideabi 
+</span><span style="color:#bf616a;">rustup</span><span style="color:#c0c5ce;"> target add i686-linux-android
+</span></code></pre>
+<p>Next, install the <a href="https://developer.android.com/ndk/downloads">latest</a> Android NDK (Native Development Kit).  The NDK contains prebuilt toolchains for each version
+of Android.  However, the standalone installation will need to be installed because libsqlite3 looks for the toolchain
+by name without the Android version in it on the $PATH.  A work-around could be made, but it's easy to install the 
+standalone toolchains.  Install the NDK toolchains in an easily accessibly location.  This was tested with Python 2.7.5.</p>
+<pre style="background-color:#2b303b;">
+<code class="language-bash" data-lang="bash"><span style="color:#bf616a;">mkdir ~</span><span style="color:#c0c5ce;">/.NDK
+</span><span style="color:#bf616a;">~/Downloads/android-ndk-r21d/build/tools/make_standalone_toolchain.py --force --api</span><span style="color:#c0c5ce;"> 21</span><span style="color:#bf616a;"> --arch</span><span style="color:#c0c5ce;"> arm64</span><span style="color:#bf616a;"> --install-dir ~</span><span style="color:#c0c5ce;">/.NDK/arm64;
+</span><span style="color:#bf616a;">~/Downloads/android-ndk-r21d/build/tools/make_standalone_toolchain.py --force --api</span><span style="color:#c0c5ce;"> 21</span><span style="color:#bf616a;"> --arch</span><span style="color:#c0c5ce;"> arm</span><span style="color:#bf616a;"> --install-dir ~</span><span style="color:#c0c5ce;">/.NDK/arm;
+</span><span style="color:#bf616a;">~/Downloads/android-ndk-r21d/build/tools/make_standalone_toolchain.py --force --api</span><span style="color:#c0c5ce;"> 21</span><span style="color:#bf616a;"> --arch</span><span style="color:#c0c5ce;"> x86</span><span style="color:#bf616a;"> --install-dir ~</span><span style="color:#c0c5ce;">/.NDK/x86;
+</span></code></pre>
+<p>Update the $PATH, so libsqlite3 can access the newly installed toolchains</p>
+<pre style="background-color:#2b303b;">
+<code class="language-shell script" data-lang="shell script"><span style="color:#c0c5ce;">export PATH=&quot;~/.NDK/arm64/bin:$PATH&quot;
+export PATH=&quot;~/.NDK/arm/bin:$PATH&quot;
+export PATH=&quot;~/.NDK/i686/bin:$PATH&quot;
+</span></code></pre>
+<p>Create a cargo config.toml to point to the newly created toolchains at ~/.cargo/config.toml</p>
+<pre style="background-color:#2b303b;">
+<code class="language-toml" data-lang="toml"><span style="color:#c0c5ce;">[target.aarch64-linux-android]
+</span><span style="color:#bf616a;">ar </span><span style="color:#c0c5ce;">= &quot;</span><span style="color:#a3be8c;">.NDK/arm64/bin/aarch64-linux-android-ar</span><span style="color:#c0c5ce;">&quot;
+</span><span style="color:#bf616a;">linker </span><span style="color:#c0c5ce;">= &quot;</span><span style="color:#a3be8c;">.NDK/arm64/bin/aarch64-linux-android-clang</span><span style="color:#c0c5ce;">&quot;
+
+[target.armv7-linux-androideabi]
+</span><span style="color:#bf616a;">ar </span><span style="color:#c0c5ce;">= &quot;</span><span style="color:#a3be8c;">.NDK/arm/bin/arm-linux-androideabi-ar</span><span style="color:#c0c5ce;">&quot;
+</span><span style="color:#bf616a;">linker </span><span style="color:#c0c5ce;">= &quot;</span><span style="color:#a3be8c;">.NDK/arm/bin/arm-linux-androideabi-clang</span><span style="color:#c0c5ce;">&quot;
+
+[target.i686-linux-android]
+</span><span style="color:#bf616a;">ar </span><span style="color:#c0c5ce;">= &quot;</span><span style="color:#a3be8c;">.NDK/x86/bin/i686-linux-android-ar</span><span style="color:#c0c5ce;">&quot;
+</span><span style="color:#bf616a;">linker </span><span style="color:#c0c5ce;">= &quot;</span><span style="color:#a3be8c;">.NDK/x86/bin/i686-linux-android-clang</span><span style="color:#c0c5ce;">&quot;
+</span></code></pre><h2 id="android-bindings">Android Bindings</h2>
+<p>Now that the toolchains are taken care of, create a new rust library for the Android bindings inside 
+the <code>/cross-platform-rust-database-access</code> directory</p>
+<pre style="background-color:#2b303b;">
+<code class="language-bash" data-lang="bash"><span style="color:#bf616a;">cargo</span><span style="color:#c0c5ce;"> new rust-android</span><span style="color:#bf616a;"> --lib
+</span></code></pre>
+<p>Update the cargo.toml to include the rust-core library and <a href="https://crates.io/crates/jni">jni</a> (Java Native Interface) 
+for building the Android bindings. Also, change the <code>crate-type</code> to a dynamic system library so it can be loaded by 
+Android.</p>
+<pre style="background-color:#2b303b;">
+<code class="language-toml" data-lang="toml"><span style="color:#c0c5ce;">[lib]
+</span><span style="color:#bf616a;">crate-type </span><span style="color:#c0c5ce;">= [&quot;</span><span style="color:#a3be8c;">cdylib</span><span style="color:#c0c5ce;">&quot;]
+
+[dependencies]
+</span><span style="color:#bf616a;">rust-core </span><span style="color:#c0c5ce;">= {</span><span style="color:#bf616a;">path</span><span style="color:#c0c5ce;">= &quot;</span><span style="color:#a3be8c;">../rust-core</span><span style="color:#c0c5ce;">&quot;}
+
+[target.&#39;</span><span style="color:#a3be8c;">cfg(target_os=&quot;android&quot;)</span><span style="color:#c0c5ce;">&#39;.dependencies]
+</span><span style="color:#bf616a;">jni </span><span style="color:#c0c5ce;">= { </span><span style="color:#bf616a;">version </span><span style="color:#c0c5ce;">= &quot;</span><span style="color:#a3be8c;">0.11.0</span><span style="color:#c0c5ce;">&quot;, </span><span style="color:#bf616a;">default-features </span><span style="color:#c0c5ce;">= </span><span style="color:#d08770;">false </span><span style="color:#c0c5ce;">}
+</span></code></pre>
+<p>Update the <code>src/lib.rs</code> with the code below for the Android binding.  The binding expects a parameter for the database 
+path, so it can be provided to rust-core. One thing to point out is the function name corresponds to the package
+and class where it'll be consumed in the Android app. Later on, a <code>MainActivity.java</code> class will be created in the 
+<code>com.example.android</code> package scope to consume and execute this binding.</p>
+<pre style="background-color:#2b303b;">
+<code class="language-rust" data-lang="rust"><span style="color:#c0c5ce;">#![</span><span style="color:#bf616a;">cfg</span><span style="color:#c0c5ce;">(target_os = &quot;</span><span style="color:#a3be8c;">android</span><span style="color:#c0c5ce;">&quot;)]
+#![</span><span style="color:#bf616a;">allow</span><span style="color:#c0c5ce;">(non_snake_case)]
+
+</span><span style="color:#b48ead;">use </span><span style="color:#c0c5ce;">std::ffi::{CString, CStr};
+</span><span style="color:#b48ead;">use </span><span style="color:#c0c5ce;">jni::JNIEnv;
+</span><span style="color:#b48ead;">use </span><span style="color:#c0c5ce;">jni::objects::{JObject, JString};
+</span><span style="color:#b48ead;">use </span><span style="color:#c0c5ce;">jni::sys::{jstring};
+</span><span style="color:#b48ead;">use </span><span style="color:#c0c5ce;">rust_core::database_test;
+
+#[</span><span style="color:#bf616a;">no_mangle</span><span style="color:#c0c5ce;">]
+</span><span style="color:#b48ead;">pub unsafe extern fn </span><span style="color:#8fa1b3;">Java_com_example_android_MainActivity_calldatabase</span><span style="color:#c0c5ce;">(</span><span style="color:#bf616a;">env</span><span style="color:#c0c5ce;">: JNIEnv, _: JObject, </span><span style="color:#bf616a;">j_recipient</span><span style="color:#c0c5ce;">: JString) -&gt; jstring {
+    </span><span style="color:#b48ead;">let</span><span style="color:#c0c5ce;"> database_path_c_string = CString::from(
+        CStr::from_ptr(
+            env.</span><span style="color:#96b5b4;">get_string</span><span style="color:#c0c5ce;">(j_recipient).</span><span style="color:#96b5b4;">unwrap</span><span style="color:#c0c5ce;">().</span><span style="color:#96b5b4;">as_ptr</span><span style="color:#c0c5ce;">()
+        )
+    );
+    </span><span style="color:#b48ead;">let</span><span style="color:#c0c5ce;"> database_path = database_path_c_string.</span><span style="color:#96b5b4;">to_str</span><span style="color:#c0c5ce;">().</span><span style="color:#96b5b4;">unwrap</span><span style="color:#c0c5ce;">().</span><span style="color:#96b5b4;">to_string</span><span style="color:#c0c5ce;">();
+
+    </span><span style="color:#b48ead;">let</span><span style="color:#c0c5ce;"> database_result = </span><span style="color:#96b5b4;">database_test</span><span style="color:#c0c5ce;">(database_path);
+
+    </span><span style="color:#b48ead;">let</span><span style="color:#c0c5ce;"> output = env.</span><span style="color:#96b5b4;">new_string</span><span style="color:#c0c5ce;">(database_result.</span><span style="color:#96b5b4;">to_owned</span><span style="color:#c0c5ce;">()).</span><span style="color:#96b5b4;">unwrap</span><span style="color:#c0c5ce;">();
+    output.</span><span style="color:#96b5b4;">into_inner</span><span style="color:#c0c5ce;">()
+}
+</span></code></pre>
+<p>Build the project for the Android targets.</p>
+<pre style="background-color:#2b303b;">
+<code class="language-bash" data-lang="bash"><span style="color:#bf616a;">cargo</span><span style="color:#c0c5ce;"> build</span><span style="color:#bf616a;"> --target</span><span style="color:#c0c5ce;"> aarch64-linux-android</span><span style="color:#bf616a;"> --release
+cargo</span><span style="color:#c0c5ce;"> build</span><span style="color:#bf616a;"> --target</span><span style="color:#c0c5ce;"> armv7-linux-androideabi</span><span style="color:#bf616a;"> --release
+cargo</span><span style="color:#c0c5ce;"> build</span><span style="color:#bf616a;"> --target</span><span style="color:#c0c5ce;"> i686-linux-android</span><span style="color:#bf616a;"> --release
+</span></code></pre><h2 id="android-app">Android App</h2>
+<p>Create a new Android project in the <code>/cross-platform-rust-database-access</code> directory targeting API 21 and 
+with <code>com.example.android</code> as the package.</p>
+<img loading="lazy" alt="Android Studio - Create New Project" src="https:&#x2F;&#x2F;logankeenan.com&#x2F;processed_images&#x2F;cd33374c2575391f00.png">
+<p>Update the MainActivity.kt with the code below.  The code gets a location for the SQLite file to be saved, passes it to 
+the binding and then logs out the result of the database call. </p>
+<pre style="background-color:#2b303b;">
+<code class="language-kotlin" data-lang="kotlin"><span style="color:#b48ead;">package </span><span style="color:#c0c5ce;">com.example.android
+
+import android.os.Bundle
+</span><span style="color:#b48ead;">import</span><span style="color:#c0c5ce;"> android.util.Log
+import androidx.appcompat.app.AppCompatActivity
+
+</span><span style="color:#b48ead;">class </span><span style="color:#ebcb8b;">MainActivity </span><span style="color:#c0c5ce;">: </span><span style="color:#a3be8c;">AppCompatActivity</span><span style="color:#c0c5ce;">() {
+    </span><span style="color:#b48ead;">override fun </span><span style="color:#8fa1b3;">onCreate</span><span style="color:#c0c5ce;">(savedInstanceState: Bundle?) {
+        </span><span style="color:#d08770;">super</span><span style="color:#c0c5ce;">.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        System.loadLibrary(&quot;</span><span style="color:#a3be8c;">rust_android</span><span style="color:#c0c5ce;">&quot;)
+        </span><span style="color:#b48ead;">var </span><span style="color:#c0c5ce;">databasePath = packageManager.getPackageInfo(packageName, </span><span style="color:#d08770;">0</span><span style="color:#c0c5ce;">).applicationInfo.dataDir
+        Log.d(&quot;</span><span style="color:#a3be8c;">rust</span><span style="color:#c0c5ce;">&quot;, calldatabase(&quot;</span><span style="color:#bf616a;">$databasePath</span><span style="color:#a3be8c;">/database.sqlite</span><span style="color:#c0c5ce;">&quot;))
+    }
+
+    external </span><span style="color:#b48ead;">fun </span><span style="color:#8fa1b3;">calldatabase</span><span style="color:#c0c5ce;">(to: </span><span style="color:#b48ead;">String</span><span style="color:#c0c5ce;">): </span><span style="color:#b48ead;">String
+</span><span style="color:#c0c5ce;">}
+</span></code></pre>
+<p>Create a directory for the bindings and copy over the compiled rust-android bindings to the Android project. </p>
+<pre style="background-color:#2b303b;">
+<code class="language-bash" data-lang="bash"><span style="color:#bf616a;">mkdir</span><span style="color:#c0c5ce;"> android/app/src/main/jniLibs
+</span><span style="color:#bf616a;">mkdir</span><span style="color:#c0c5ce;"> android/app/src/main/jniLibs/arm64-v8a
+</span><span style="color:#bf616a;">mkdir</span><span style="color:#c0c5ce;"> android/app/src/main/jniLibs/armeabi-v7a
+</span><span style="color:#bf616a;">mkdir</span><span style="color:#c0c5ce;"> android/app/src/main/jniLibs/x86
+
+</span><span style="color:#bf616a;">cp</span><span style="color:#c0c5ce;"> rust-android/target/aarch64-linux-android/release/librust_android.so  android/app/src/main/jniLibs/arm64-v8a/librust_android.so
+</span><span style="color:#bf616a;">cp</span><span style="color:#c0c5ce;"> rust-android/target/armv7-linux-androideabi/release/librust_android.so  android/app/src/main/jniLibs/armeabi-v7a/librust_android.so
+</span><span style="color:#bf616a;">cp</span><span style="color:#c0c5ce;"> rust-android/target/i686-linux-android/release/librust_android.so  android/app/src/main/jniLibs/x86/librust_android.so
+</span></code></pre>
+<p>Finally, start or debug the Android application.  The result of the calldatabase function will be outputted to the logs.</p>
+<img loading="lazy" alt="Android Studio log output: Person { id: 1, name: &#x27;Ada Lovelace&#x27; } " src="https:&#x2F;&#x2F;logankeenan.com&#x2F;processed_images&#x2F;618c7ddc54df6ca000.png">
+<p>Congratulations, an Android app is now calling Rust to access a SQLite database! A next step might be serializing the 
+result into a class to be used with the Android application.  It's not included in this post, but these build steps could be 
+scripted out to ease development.  Check out the rust-android 
+<a href="https://github.com/logankeenan/cross-platform-rust-database-access/tree/main/rust-android">source</a> and android 
+<a href="https://github.com/logankeenan/cross-platform-rust-database-access/tree/main/android">source</a>.</p>
+<p>Credit is due to <a href="https://visly.app/blog/rust-on-android">Emil Sjölander</a> for help with toolchain setup and bindings.</p>
+
+
+</body>
+</html>

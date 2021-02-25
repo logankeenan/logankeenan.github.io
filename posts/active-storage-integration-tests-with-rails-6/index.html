@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description"
+          content="Active Storage Integration Tests with Rails 6 for create and edit including removing the attachment">
+    <title>Logan Keenan - Active Storage Integration Tests with Rails 6</title>
+    <link href="/css/styles.css" rel="stylesheet" />
+</head>
+<body>
+<nav class="main-nav">
+    <a href="/">Home</a>
+    <a target="_blank" href="https://cultivatedsoftware.com">Hire Me</a>
+    <a href="/talks">Talks</a>
+</nav>
+
+<h1>
+    Active Storage Integration Tests with Rails 6
+</h1>
+<time datetime="2019-10-17">
+    October 17, 2019
+</time>
+<p>This article will cover creating integration tests using Rails 6 Active Storage. It will include the create and edit actions.</p>
+<h2 id="defining-the-model-and-adding-a-profile-picture">Defining the Model and adding a Profile Picture</h2>
+<p>Scaffold out the model.</p>
+<pre style="background-color:#2b303b;">
+<code class="language-bash" data-lang="bash"><span style="color:#bf616a;">$</span><span style="color:#c0c5ce;"> rails g scaffold Profile name:string
+</span></code></pre>
+<p>Update the model/profile.rb to include a profile picture.</p>
+<pre style="background-color:#2b303b;">
+<code class="language-ruby" data-lang="ruby"><span style="color:#b48ead;">class </span><span style="color:#ebcb8b;">Profile </span><span style="color:#eff1f5;">&lt; </span><span style="color:#a3be8c;">ApplicationRecord
+</span><span style="color:#c0c5ce;">    has_one_attached </span><span style="color:#a3be8c;">:profile_picture
+</span><span style="color:#b48ead;">end
+</span></code></pre>
+<p>Update the views/profiles/_form.html.erb to include a input for the profile picture.</p>
+<pre style="background-color:#2b303b;">
+<code class="language-erb" data-lang="erb"><span style="color:#c0c5ce;">&lt;</span><span style="color:#bf616a;">div </span><span style="color:#d08770;">class</span><span style="color:#c0c5ce;">=&quot;</span><span style="color:#a3be8c;">field</span><span style="color:#c0c5ce;">&quot;&gt;
+    </span><span style="color:#ab7967;">&lt;%=</span><span style="color:#c0c5ce;"> form.label </span><span style="color:#a3be8c;">:profile_picture </span><span style="color:#ab7967;">%&gt;
+    &lt;%=</span><span style="color:#c0c5ce;"> form.file_field </span><span style="color:#a3be8c;">:profile_picture </span><span style="color:#ab7967;">%&gt;
+</span><span style="color:#c0c5ce;">&lt;/</span><span style="color:#bf616a;">div</span><span style="color:#c0c5ce;">&gt;
+</span></code></pre>
+<p>Update the controllers/profile_controller.rb to allow for the profile_picture params.</p>
+<pre style="background-color:#2b303b;">
+<code class="language-ruby" data-lang="ruby"><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">profile_params
+</span><span style="color:#c0c5ce;">    params.</span><span style="color:#8fa1b3;">require(</span><span style="color:#a3be8c;">:profile</span><span style="color:#8fa1b3;">).permit(</span><span style="color:#a3be8c;">:name</span><span style="color:#8fa1b3;">, </span><span style="color:#a3be8c;">:profile_picture</span><span style="color:#8fa1b3;">)
+</span><span style="color:#b48ead;">end
+</span></code></pre><h2 id="setting-up-integration-tests">Setting up Integration Tests</h2>
+<p>Add the integration test settings to test_helper.rb.</p>
+<pre style="background-color:#2b303b;">
+<code class="language-ruby" data-lang="ruby"><span style="color:#8fa1b3;">require </span><span style="color:#c0c5ce;">&#39;</span><span style="color:#a3be8c;">capybara/minitest</span><span style="color:#c0c5ce;">&#39;
+
+</span><span style="color:#b48ead;">class </span><span style="color:#ebcb8b;">ActionDispatch::IntegrationTest
+    </span><span style="color:#65737e;"># Make the Capybara DSL available in all integration tests
+    </span><span style="color:#8fa1b3;">include </span><span style="color:#ebcb8b;">Capybara</span><span style="color:#c0c5ce;">::DSL
+    </span><span style="color:#65737e;"># Make `assert_*` methods behave like Minitest assertions
+    </span><span style="color:#8fa1b3;">include </span><span style="color:#ebcb8b;">Capybara</span><span style="color:#c0c5ce;">::</span><span style="color:#ebcb8b;">Minitest</span><span style="color:#c0c5ce;">::Assertions
+
+
+    </span><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">setup
+        </span><span style="color:#ebcb8b;">Capybara</span><span style="color:#c0c5ce;">.default_driver = </span><span style="color:#a3be8c;">:selenium_chrome_headless
+        </span><span style="color:#ebcb8b;">Capybara</span><span style="color:#c0c5ce;">.default_max_wait_time = </span><span style="color:#d08770;">5
+    </span><span style="color:#b48ead;">end
+
+    </span><span style="color:#65737e;"># Reset sessions and driver between tests
+    # Use super wherever this method is redefined in your individual test classes
+    </span><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">teardown
+        </span><span style="color:#ebcb8b;">Capybara</span><span style="color:#c0c5ce;">.reset_sessions!
+        </span><span style="color:#ebcb8b;">Capybara</span><span style="color:#c0c5ce;">.use_default_driver
+        </span><span style="color:#ebcb8b;">Capybara</span><span style="color:#c0c5ce;">.default_max_wait_time = </span><span style="color:#d08770;">2
+    </span><span style="color:#b48ead;">end
+end
+</span></code></pre><h2 id="create-profile-integration-test">Create Profile Integration Test</h2>
+<p>Create a file called test/integration/profile_integration_test.rb and add the first test to create a profile. Remember to add a picture called picture_one.jpg to the test directory.</p>
+<pre style="background-color:#2b303b;">
+<code class="language-ruby" data-lang="ruby"><span style="color:#65737e;"># frozen_string_literal: true
+</span><span style="color:#8fa1b3;">require </span><span style="color:#c0c5ce;">&#39;</span><span style="color:#a3be8c;">test_helper</span><span style="color:#c0c5ce;">&#39;
+
+</span><span style="color:#b48ead;">class </span><span style="color:#ebcb8b;">ProfileIntegrationTest </span><span style="color:#eff1f5;">&lt; </span><span style="color:#a3be8c;">ActionDispatch::IntegrationTest
+    </span><span style="color:#96b5b4;">test </span><span style="color:#c0c5ce;">&#39;</span><span style="color:#a3be8c;">that a profile can be created</span><span style="color:#c0c5ce;">&#39; </span><span style="color:#b48ead;">do
+</span><span style="color:#c0c5ce;">        visit new_profile_path
+
+        fill_in &quot;</span><span style="color:#a3be8c;">Name</span><span style="color:#c0c5ce;">&quot;, </span><span style="color:#a3be8c;">with: </span><span style="color:#c0c5ce;">&#39;</span><span style="color:#a3be8c;">Jane Doe</span><span style="color:#c0c5ce;">&#39;
+
+        find(</span><span style="color:#a3be8c;">:css</span><span style="color:#c0c5ce;">, &#39;</span><span style="color:#a3be8c;">#profile_profile_picture</span><span style="color:#c0c5ce;">&#39;).set(</span><span style="color:#ebcb8b;">File</span><span style="color:#c0c5ce;">.join(</span><span style="color:#ebcb8b;">Rails</span><span style="color:#c0c5ce;">.root + &quot;</span><span style="color:#a3be8c;">test</span><span style="color:#c0c5ce;">&quot;, &#39;</span><span style="color:#a3be8c;">picture_one.jpg</span><span style="color:#c0c5ce;">&#39;))
+
+        click_button &#39;</span><span style="color:#a3be8c;">Create Profile</span><span style="color:#c0c5ce;">&#39;
+
+        assert_current_path profile_path(</span><span style="color:#ebcb8b;">Profile</span><span style="color:#c0c5ce;">.order(&quot;</span><span style="color:#a3be8c;">created_at</span><span style="color:#c0c5ce;">&quot;).last)
+
+        assert_equal </span><span style="color:#ebcb8b;">ActiveStorage</span><span style="color:#c0c5ce;">::</span><span style="color:#ebcb8b;">Attachment</span><span style="color:#c0c5ce;">.count, </span><span style="color:#d08770;">1
+    </span><span style="color:#b48ead;">end
+end
+</span></code></pre><h2 id="remove-an-existing-profile-picture">Remove an Existing Profile Picture</h2>
+<p>Add a fixture to test/fixtures/profile.yml to represent the profile.</p>
+<pre style="background-color:#2b303b;">
+<code class="language-yaml" data-lang="yaml"><span style="color:#bf616a;">remove_existing_profile_picture</span><span style="color:#c0c5ce;">:
+    </span><span style="color:#bf616a;">name</span><span style="color:#c0c5ce;">: &#39;</span><span style="color:#a3be8c;">Jane Doe</span><span style="color:#c0c5ce;">&#39;
+</span></code></pre>
+<p>We need to add an attribute to the model which we can use to determine if the profile picture should be removed or not.</p>
+<pre style="background-color:#2b303b;">
+<code class="language-ruby" data-lang="ruby"><span style="color:#b48ead;">class </span><span style="color:#ebcb8b;">Profile </span><span style="color:#eff1f5;">&lt; </span><span style="color:#a3be8c;">ApplicationRecord
+</span><span style="color:#c0c5ce;">    has_one_attached </span><span style="color:#a3be8c;">:profile_picture
+
+
+    </span><span style="color:#8fa1b3;">attr_accessor </span><span style="color:#a3be8c;">:remove_existing_profile_picture
+</span><span style="color:#b48ead;">end
+</span></code></pre>
+<p>Update the controller to allow for the new parameter.</p>
+<pre style="background-color:#2b303b;">
+<code class="language-ruby" data-lang="ruby"><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">profile_params
+</span><span style="color:#c0c5ce;">    params.</span><span style="color:#8fa1b3;">require(</span><span style="color:#a3be8c;">:profile</span><span style="color:#8fa1b3;">).permit(</span><span style="color:#a3be8c;">:name</span><span style="color:#8fa1b3;">, </span><span style="color:#a3be8c;">:profile_picture</span><span style="color:#8fa1b3;">, </span><span style="color:#a3be8c;">:remove_existing_profile_picture</span><span style="color:#8fa1b3;">)
+</span><span style="color:#b48ead;">end
+</span></code></pre>
+<p>Update the form to show the remove profile picture checkbox, but only if a picture is attached.</p>
+<pre style="background-color:#2b303b;">
+<code class="language-erb" data-lang="erb"><span style="color:#ab7967;">&lt;% </span><span style="color:#b48ead;">if</span><span style="color:#c0c5ce;"> profile.profile_picture.attached? </span><span style="color:#ab7967;">%&gt;
+    &lt;%=</span><span style="color:#c0c5ce;"> form.label </span><span style="color:#a3be8c;">:remove_existing_profile_picture </span><span style="color:#ab7967;">%&gt;
+    &lt;%=</span><span style="color:#c0c5ce;"> form.check_box </span><span style="color:#a3be8c;">:remove_existing_profile_picture </span><span style="color:#ab7967;">%&gt;
+&lt;% </span><span style="color:#b48ead;">end </span><span style="color:#ab7967;">%&gt;
+</span></code></pre>
+<p>Update the controller to check for the remove_existing_profile_picture and remove the profile picture.</p>
+<pre style="background-color:#2b303b;">
+<code class="language-ruby" data-lang="ruby"><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">update
+</span><span style="color:#c0c5ce;">   </span><span style="color:#b48ead;">if</span><span style="color:#c0c5ce;"> profile_params[</span><span style="color:#a3be8c;">:remove_existing_profile_picture</span><span style="color:#c0c5ce;">] == &quot;</span><span style="color:#a3be8c;">1</span><span style="color:#c0c5ce;">&quot;
+</span><span style="color:#c0c5ce;">     @</span><span style="color:#bf616a;">profile_picture </span><span style="color:#c0c5ce;">= @</span><span style="color:#bf616a;">profile</span><span style="color:#c0c5ce;">.profile_picture
+</span><span style="color:#c0c5ce;">     @</span><span style="color:#bf616a;">profile_picture</span><span style="color:#c0c5ce;">.purge_later
+</span><span style="color:#c0c5ce;">   </span><span style="color:#b48ead;">end
+
+</span><span style="color:#c0c5ce;">   ...
+</span><span style="color:#b48ead;">end
+</span></code></pre>
+<p>Add the integration test to remove the profile picture.</p>
+<pre style="background-color:#2b303b;">
+<code class="language-ruby" data-lang="ruby"><span style="color:#96b5b4;">test </span><span style="color:#c0c5ce;">&#39;</span><span style="color:#a3be8c;">that a profile picture can be removed </span><span style="color:#c0c5ce;">&#39; </span><span style="color:#b48ead;">do
+</span><span style="color:#c0c5ce;">   profile = profiles(</span><span style="color:#a3be8c;">:remove_existing_profile_picture</span><span style="color:#c0c5ce;">)
+</span><span style="color:#c0c5ce;">   profile.profile_picture.attach(
+</span><span style="color:#c0c5ce;">       </span><span style="color:#a3be8c;">io: </span><span style="color:#ebcb8b;">File</span><span style="color:#c0c5ce;">.</span><span style="color:#96b5b4;">open</span><span style="color:#c0c5ce;">(</span><span style="color:#ebcb8b;">File</span><span style="color:#c0c5ce;">.join(</span><span style="color:#ebcb8b;">Rails</span><span style="color:#c0c5ce;">.root + &quot;</span><span style="color:#a3be8c;">test</span><span style="color:#c0c5ce;">&quot;, &#39;</span><span style="color:#a3be8c;">picture_one.jpg</span><span style="color:#c0c5ce;">&#39;)), 
+</span><span style="color:#c0c5ce;">       </span><span style="color:#a3be8c;">filename: </span><span style="color:#c0c5ce;">&#39;</span><span style="color:#a3be8c;">picture_one.JPG</span><span style="color:#c0c5ce;">&#39;, </span><span style="color:#a3be8c;">content_type: </span><span style="color:#c0c5ce;">&#39;</span><span style="color:#a3be8c;">image/jpeg</span><span style="color:#c0c5ce;">&#39;
+</span><span style="color:#c0c5ce;">   )
+</span><span style="color:#c0c5ce;">   profile.save!
+
+</span><span style="color:#c0c5ce;">   visit edit_profile_path(profile)
+
+</span><span style="color:#c0c5ce;">   find(</span><span style="color:#a3be8c;">:css</span><span style="color:#c0c5ce;">, &quot;</span><span style="color:#a3be8c;">#profile_remove_existing_profile_picture</span><span style="color:#c0c5ce;">&quot;).set(</span><span style="color:#d08770;">true</span><span style="color:#c0c5ce;">)
+
+</span><span style="color:#c0c5ce;">   click_button &#39;</span><span style="color:#a3be8c;">Update Profile</span><span style="color:#c0c5ce;">&#39;
+
+</span><span style="color:#c0c5ce;">   assert_equal </span><span style="color:#ebcb8b;">ActiveStorage</span><span style="color:#c0c5ce;">::</span><span style="color:#ebcb8b;">Attachment</span><span style="color:#c0c5ce;">.count, </span><span style="color:#d08770;">0
+</span><span style="color:#b48ead;">end
+</span></code></pre>
+<p><a href="https://github.com/logankeenan/active-storage-integration-tests">Source</a></p>
+
+
+</body>
+</html>

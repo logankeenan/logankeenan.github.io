@@ -1,0 +1,40 @@
+body {
+    margin: 4rem auto;
+    font-family: sans-serif;
+    color: #333333;
+    max-width: 768px;
+    line-height: 1.5;
+}
+
+pre {
+    padding: .5rem;
+    overflow: scroll;
+    border-radius: 3px;
+}
+
+@media (max-width: 768px) {
+    body {
+        margin: 4rem 20px;
+    }
+}
+
+img {
+    width: 100%;
+    height: auto;
+}
+
+a {
+    color: #333333;
+}
+
+a:hover {
+    text-decoration: none;
+}
+
+.main-nav a {
+    margin: 0 15px;
+}
+
+.main-nav a:first-child {
+    margin-left: 0;
+}

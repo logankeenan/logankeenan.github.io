@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description"
+          content="A Rust library featuring SQLite database access integrated with Node.js">
+    <title>Logan Keenan - Cross-Platform Rust: Database Access with Node.js Integration</title>
+    <link href="/css/styles.css" rel="stylesheet" />
+</head>
+<body>
+<nav class="main-nav">
+    <a href="/">Home</a>
+    <a target="_blank" href="https://cultivatedsoftware.com">Hire Me</a>
+    <a href="/talks">Talks</a>
+</nav>
+
+<h1>
+    Cross-Platform Rust: Database Access with Node.js Integration
+</h1>
+<time datetime="2020-10-15">
+    October 15, 2020
+</time>
+<p>This post will cover integrating the rust-core library created in the previous 
+<a href="posts/cross-platform-rust-database-access/">post</a> with Node.js.</p>
+<p>Creating bindings between Rust and Node.js is easy with 
+<a href="https://neon-bindings.com/">neon-bindings</a>. Install neon-bindings globally 
+with NPM.  The <a href="https://neon-bindings.com/docs/getting-started">getting-started</a> page has more information
+on neon's dependencies for any install issues.</p>
+<pre style="background-color:#2b303b;">
+<code class="language-bash" data-lang="bash"><span style="color:#bf616a;">npm</span><span style="color:#c0c5ce;"> install</span><span style="color:#bf616a;"> --global</span><span style="color:#c0c5ce;"> neon-cli
+</span></code></pre>
+<p>Generate a new neon project inside <code>/cross-platform-rust-database-access</code> and install the neon dependencies. </p>
+<pre style="background-color:#2b303b;">
+<code class="language-bash" data-lang="bash"><span style="color:#bf616a;">neon</span><span style="color:#c0c5ce;"> new nodejs
+</span><span style="color:#96b5b4;">cd</span><span style="color:#c0c5ce;"> nodejs
+</span><span style="color:#bf616a;">npm</span><span style="color:#c0c5ce;"> i
+</span></code></pre>
+<p>Before the rust-code is integrated, check to make sure neon is working as expected.</p>
+<pre style="background-color:#2b303b;">
+<code class="language-bash" data-lang="bash"><span style="color:#bf616a;">neon</span><span style="color:#c0c5ce;"> build</span><span style="color:#bf616a;"> --release
+node</span><span style="color:#c0c5ce;"> lib/index.js
+</span><span style="color:#65737e;"># hello world
+</span></code></pre>
+<p>Time to integrate the rust-core library.  First, add rust-core to the <code>native/cargo.toml</code> file.</p>
+<pre style="background-color:#2b303b;">
+<code class="language-toml" data-lang="toml"><span style="color:#c0c5ce;">[dependencies]
+</span><span style="color:#bf616a;">neon </span><span style="color:#c0c5ce;">= &quot;</span><span style="color:#a3be8c;">0.5.0</span><span style="color:#c0c5ce;">&quot;
+</span><span style="color:#bf616a;">rust-core </span><span style="color:#c0c5ce;">= { </span><span style="color:#bf616a;">path </span><span style="color:#c0c5ce;">= &quot;</span><span style="color:#a3be8c;">../../rust-core</span><span style="color:#c0c5ce;">&quot; }
+</span></code></pre>
+<p>Create the binding between Node.js and Rust by editing <code>native/src/lib.rs</code> and add the code below.  It creates a function
+named <code>call_database</code> accessible in Node.js and accepts the SQLite path as a string to pass along to rust-core.</p>
+<pre style="background-color:#2b303b;">
+<code class="language-rust" data-lang="rust"><span style="color:#b48ead;">use </span><span style="color:#c0c5ce;">neon::prelude::*;
+</span><span style="color:#b48ead;">use </span><span style="color:#c0c5ce;">rust_core::database_test;
+
+</span><span style="color:#b48ead;">fn </span><span style="color:#8fa1b3;">call_database</span><span style="color:#c0c5ce;">(</span><span style="color:#b48ead;">mut </span><span style="color:#bf616a;">cx</span><span style="color:#c0c5ce;">: FunctionContext) -&gt; JsResult&lt;JsString&gt; {
+    </span><span style="color:#b48ead;">let</span><span style="color:#c0c5ce;"> database_path = cx.argument::&lt;JsString&gt;(</span><span style="color:#d08770;">0</span><span style="color:#c0c5ce;">).</span><span style="color:#96b5b4;">unwrap</span><span style="color:#c0c5ce;">().</span><span style="color:#96b5b4;">value</span><span style="color:#c0c5ce;">();
+
+    </span><span style="color:#b48ead;">let</span><span style="color:#c0c5ce;"> result = </span><span style="color:#96b5b4;">database_test</span><span style="color:#c0c5ce;">(database_path);
+    Ok(cx.</span><span style="color:#96b5b4;">string</span><span style="color:#c0c5ce;">(result))
+}
+
+register_module!(</span><span style="color:#b48ead;">mut</span><span style="color:#c0c5ce;"> cx, {
+    cx.</span><span style="color:#96b5b4;">export_function</span><span style="color:#c0c5ce;">(&quot;</span><span style="color:#a3be8c;">call_database</span><span style="color:#c0c5ce;">&quot;, call_database)
+});
+</span></code></pre>
+<p>Lastly, update the <code>lib/index.js</code> file to properly call the newly created binding.</p>
+<pre style="background-color:#2b303b;">
+<code class="language-js" data-lang="js"><span style="color:#b48ead;">var </span><span style="color:#bf616a;">addon </span><span style="color:#c0c5ce;">= </span><span style="color:#96b5b4;">require</span><span style="color:#c0c5ce;">(&#39;</span><span style="color:#a3be8c;">../native</span><span style="color:#c0c5ce;">&#39;);
+
+</span><span style="color:#ebcb8b;">console</span><span style="color:#c0c5ce;">.</span><span style="color:#96b5b4;">log</span><span style="color:#c0c5ce;">(</span><span style="color:#bf616a;">addon</span><span style="color:#c0c5ce;">.</span><span style="color:#8fa1b3;">call_database</span><span style="color:#c0c5ce;">(&#39;</span><span style="color:#a3be8c;">./database.sqlite</span><span style="color:#c0c5ce;">&#39;));
+</span></code></pre>
+<p>Build and execute the Node.js code.</p>
+<pre style="background-color:#2b303b;">
+<code class="language-bash" data-lang="bash"><span style="color:#bf616a;">neon</span><span style="color:#c0c5ce;"> build</span><span style="color:#bf616a;"> --release
+node</span><span style="color:#c0c5ce;"> lib/index.js
+</span><span style="color:#65737e;"># Person { id: 1, name: &quot;Ada Lovelace&quot; } 
+
+</span><span style="color:#bf616a;">node</span><span style="color:#c0c5ce;"> lib/index.js
+</span><span style="color:#65737e;"># Person { id: 2, name: &quot;Ada Lovelace&quot; }
+</span></code></pre>
+<p>That's it! While this example is pretty trivial, it's easy to imagine how it can be built upon when creating an app. </p>
+<p><a href="https://github.com/logankeenan/cross-platform-rust-database-access/tree/main/nodejs">Source code</a> </p>
+
+
+</body>
+</html>
