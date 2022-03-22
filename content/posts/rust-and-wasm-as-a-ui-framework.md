@@ -2,7 +2,7 @@
 title = "Running a Rust Server in-browser as an SPA"
 description = "Running a Rust server compiled to WASM in the browser as a single page application"
 date = 2022-02-19 
-draft = false
+draft = true
 +++
 
 I've been working on novel pattern to make applications and wanted to share. This can be applied to apps running on a
