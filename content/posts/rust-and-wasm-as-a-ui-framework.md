@@ -2,7 +2,7 @@
 title = "Running a Rust Server in-browser as an SPA"
 description = "Running a Rust server compiled to WASM in the browser as a single page application"
 date = 2022-02-19 
-draft = false 
+draft = false
 +++
 
 I've been working on novel pattern to make applications and wanted to share. This can be applied to apps running on a
@@ -10,8 +10,9 @@ server, in the browser, a Cloudflare worker, desktop/Electron, native apps for i
 
 I want to use standard server-side web app patterns. No messy build tools, no learning UI frameworks, no transpilers, or
 any of the other complexity involved with development today. It's not that those things are bad, but it's more than I
-want to think about. I just want to focus on the user problem. So what does this involve? Just a server, HTTP requests,
-HTTP responses, HTML, JavaScript when needed, and updating the browser DOM. This can all be achieved by _
+want to think about. I just want to focus on the user problem and minimal technical overhead. So what does this involve?
+Just a server, HTTP requests, HTTP responses, HTML, JavaScript when needed, and updating the browser DOM. This can all
+be achieved by _
 running_ a Rust server in the browser in combination with a bit of JavaScript. It takes old server-side patterns
 enhanced by new technology.
 
@@ -70,10 +71,10 @@ surf = { version = "2.3.2", default-features = false, features = ["wasm-client"]
 ```
 
 Next, lets make a public function which will create our Tide server, add a route for listing the notes, and return the
-server. Later, the SPA will pass requests to it.  
+server. Later, the SPA will pass requests to it.
 
 ```rust 
-pub async fn index(_req: Request<AppState>) -> tide::Result {
+pub async fn index(_req: Request<()>) -> tide::Result {
     let notes: Vec<Note> = surf::get("http://localhost:3000/notes")).recv_json().await?;
     let notes_template_model = notes::Index {
         notes: &notes
@@ -87,12 +88,66 @@ pub async fn index(_req: Request<AppState>) -> tide::Result {
     Ok(response)
 }
 
-pub fn create(state: AppState) -> Server<AppState> {
-    let mut app = tide::with_state(state);
+pub fn create() -> Server<()> {
+    let mut app = tide::new();
     app.at("/notes").get(index);
     app
 }
 ```
+
+This is a paired down version of the actual app to show the basic setup of a Tide App. The actual app includes basic
+CRUD operations against a Note model using HTML forms. Check out repository if you're interested in server
+implementation.
+
+## The Single Page App
+
+We've got this server, so now we need to send requests to it. First, lets create another repository where the SPA code
+will live. We could have easily put all this in a single repository and not made two. However, I wanted to create a
+clear boundary between the app code and the glue code which is the code that specific to the platform, in this case the
+browser. In the future, I'll have various implementations of glue code for different platforms.
+
+```bash
+cargo new notes-demo-spa --lib
+```
+
+Update the cargo.toml file ```[lib]``` and dependencies. We've included the javascript-adapter and the tide-adapter
+which will be discussed later.
+
+```toml
+wasm-bindgen = "0.2.79"
+futures = "0.3.19"
+wasm-bindgen-futures = "0.4.29"
+tide = { git = "https://github.com/logankeenan/tide.git", branch = "wasm", features = ["wasm"], default-features = false }
+notes-demo = { path = "../notes-demo" }
+surf = { version = "2.3.2", default-features = false, features = ["wasm-client"] }
+javascript-adapter = { git = "https://github.com/rora-rs/javascript-adapter.git", branch = "main" }
+tide-adapter = { git = "https://github.com/rora-rs/tide-adapter.git", branch = "main" }
+```
+
+Let's create a public function called app. It'll be responsible for receiving a request and sending a response. Thanks
+to wasm-bindgen, all we need to do is add a few macros to our structs and functions make them available in Javascript.
+It'll generate the javascript code which allows us to interact with Rust compiled to Web Assembly through a Javascript
+API. It's awesome.  Checkout the wasm-bindgen [docs](https://rustwasm.github.io/wasm-bindgen/) for more information.
+
+```rust
+use notes_demo::AppState;
+use tide::http::{Request as TideRequest, Response as TideResponse};
+use wasm_bindgen::prelude::*;
+use tide::{Body, Middleware, Next, Request, Response};
+
+pub use javascript_adapter::{JsRequest, JsResponse};
+
+#[wasm_bindgen]
+pub async fn app(js_request: JsRequest) -> JsResponse {
+    let mut app = notes_demo::create();
+
+    let request: TideRequest = tide_adapter::javascript::to_tide_request(js_request);
+    let _tide_response: TideResponse = app.respond(request).await.unwrap();
+
+    tide_adapter::javascript::to_response(_tide_response).await
+}
+```
+
 
 
 
