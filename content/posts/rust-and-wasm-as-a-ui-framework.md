@@ -1,31 +1,98 @@
 +++
 title = "Running a Rust Server in-browser as an SPA"
 description = "Running a Rust server compiled to WASM in the browser as a single page application"
-date = 2022-02-19
-draft = true
+date = 2022-02-19 
+draft = false 
 +++
 
+I've been working on novel pattern to make applications and wanted to share. This can be applied to apps running on a
+server, in the browser, a Cloudflare worker, desktop/Electron, native apps for iOS/Android, and probably more.
+
 I want to use standard server-side web app patterns. No messy build tools, no learning UI frameworks, no transpilers, or
-any of the other complexity involved with development today. Just a server, HTTP requests, HTTP responses, HTML, and
-JavaScript when needed. This can all be achieved by _running_ a Rust server in the browser in combination with a bit of
-JavaScript. This pattern creates a straight forward familiar developer experience and a quality end result for the user.
+any of the other complexity involved with development today. It's not that those things are bad, but it's more than I
+want to think about. I just want to focus on the user problem. So what does this involve? Just a server, HTTP requests,
+HTTP responses, HTML, JavaScript when needed, and updating the browser DOM. This can all be achieved by _
+running_ a Rust server in the browser in combination with a bit of JavaScript. It takes old server-side patterns
+enhanced by new technology.
 
 ## High Level Overview
 
 Let's start with the Rust server. It's mostly the same as any other server. It has routes which call functions that
-return responses. That's it. Nothing special, just standard server-side patterns.
+return responses. That's it. Nothing special, just standard server-side patterns. We'll
+use [tide](https://github.com/http-rs/tide) for the server framework.
 
-How do we create requests? Normally, the browser would create an HTTP request any time an anchor tag is clicked or form
-is submitted. In this case, event handlers are added to forms and anchors tags in order to construct the request
-manually.
+How do we create requests and send them to our server? Normally, the browser would create an HTTP request any time an
+anchor tag is clicked or form is submitted. In this case, we'll add event handlers to forms and anchors tags in order to
+construct the request manually with a bit of JavaScript.
 
 Next, the request needs to be _sent_ to the server. This is
 where [wasm-bindgen](https://github.com/rustwasm/wasm-bindgen) comes in. In short, it's a tool that generates JavaScript
 code to interact with Rust code. It handles all the complexity in how a request can be created as a JavaScript class and
-passed to the Rust server.
+passed to the Rust server as struct.
 
-Finally, the browser is update with the Rust server's HTML response.
+The Rust server will return an HTML response where the browser will update
+leveraging [Morphdom](https://github.com/patrick-steele-idem/morphdom).
 
+There's one last bit of complexity I'll add to this example. We're going to split our code into two parts. One being the
+Rust server as a standard Rust lib. The other is the SPA application which will consume the Rust server and maintain the
+glue code with the browser. Why do this? By making the rust server a library it allows us to use this pattern and
+consume it on many platforms like Cloudflare workers, a typical server, iOS, Android, Electron, and many more.
+
+## The APP
+
+We're going to build a simple note-taking app. It'll perform CRUD operations against a note which has a title and
+content. For fun, the content will support markdown. It'll call an API to save our notes to a database. We'll walk
+through fetch a list of notes and rendering them. You can check out the source code to view the other CRUD operations
+and other details I skip over.
+
+## The Server
+
+This is going to be where all of our app logic lives. It'll leverage my
+tide [branch](https://github.com/logankeenan/tide/tree/wasm) as the sever
+framework, [surf](https://github.com/http-rs/surf) for making http requests, [askama](https://github.com/djc/askama/)
+for templating, [pulldown-cmark](https://github.com/raphlinus/pulldown-cmark) for markdown, and of course serde. Let's
+call this notes-demo.
+
+```shell
+cargo new notes-demo --lib
+```
+
+Add the dependencies to Cargo.toml
+
+```toml
+
+[dependencies]
+serde = "1.0.132"
+askama = "0.11.0"
+pulldown-cmark = "0.9.0"
+tide = { git = "https://github.com/logankeenan/tide.git", features = ["wasm"], branch = "wasm", default-features = false }
+surf = { version = "2.3.2", default-features = false, features = ["wasm-client"] }
+```
+
+Next, lets make a public function which will create our Tide server, add a route for listing the notes, and return the
+server. Later, the SPA will pass requests to it.  
+
+```rust 
+pub async fn index(_req: Request<AppState>) -> tide::Result {
+    let notes: Vec<Note> = surf::get("http://localhost:3000/notes")).recv_json().await?;
+    let notes_template_model = notes::Index {
+        notes: &notes
+    };
+    let body = notes_template_model.render()?;
+    let response = Response::builder(200)
+        .body(body)
+        .content_type(mime::HTML)
+        .build();
+
+    Ok(response)
+}
+
+pub fn create(state: AppState) -> Server<AppState> {
+    let mut app = tide::with_state(state);
+    app.at("/notes").get(index);
+    app
+}
+```
 
 
 
