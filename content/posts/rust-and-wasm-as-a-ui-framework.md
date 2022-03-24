@@ -1,8 +1,7 @@
-+++
++++ 
 title = "Running a Rust Server in-browser as an SPA"
 description = "Running a Rust server compiled to WASM in the browser as a single page application"
 date = 2022-02-19 
-draft = true
 +++
 
 I've been working on novel pattern to make applications and wanted to share. This can be applied to apps running on a
@@ -99,7 +98,7 @@ This is a paired down version of the actual app to show the basic setup of a Tid
 CRUD operations against a Note model using HTML forms. Check out repository if you're interested in server
 implementation.
 
-## The Single Page App
+## The Rust Parts of the SPA
 
 We've got this server, so now we need to send requests to it. First, lets create another repository where the SPA code
 will live. We could have easily put all this in a single repository and not made two. However, I wanted to create a
@@ -127,26 +126,36 @@ tide-adapter = { git = "https://github.com/rora-rs/tide-adapter.git", branch = "
 Let's create a public function called app. It'll be responsible for receiving a request and sending a response. Thanks
 to wasm-bindgen, all we need to do is add a few macros to our structs and functions make them available in Javascript.
 It'll generate the javascript code which allows us to interact with Rust compiled to Web Assembly through a Javascript
-API. It's awesome.  Checkout the wasm-bindgen [docs](https://rustwasm.github.io/wasm-bindgen/) for more information.
+API. It's awesome. Checkout the wasm-bindgen [docs](https://rustwasm.github.io/wasm-bindgen/) for more information.
 
 ```rust
-use notes_demo::AppState;
 use tide::http::{Request as TideRequest, Response as TideResponse};
 use wasm_bindgen::prelude::*;
 use tide::{Body, Middleware, Next, Request, Response};
 
-pub use javascript_adapter::{JsRequest, JsResponse};
+pub use rora_javascript_adapter::{JsRequest, JsResponse};
 
 #[wasm_bindgen]
 pub async fn app(js_request: JsRequest) -> JsResponse {
     let mut app = notes_demo::create();
 
-    let request: TideRequest = tide_adapter::javascript::to_tide_request(js_request);
-    let _tide_response: TideResponse = app.respond(request).await.unwrap();
+    let tide_request: TideRequest = tide_adapter::javascript::to_tide_request(js_request);
+    let tide_response: TideResponse = app.respond(tide_request).await.unwrap();
 
-    tide_adapter::javascript::to_response(_tide_response).await
+    tide_adapter::javascript::to_response(tide_response).await
 }
 ```
+
+Let's unpack this because there's quite a bit going on. The app function takes a JsRequest as a parameter and returns a
+JsResponse. JsRequest and JsResponse come
+from [rora-javascript-adapter](https://docs.rs/rora-javascript-adapter/latest/rora_javascript_adapter/) which is a crate
+I created to make it easy to send HTTP messages from JavaScript to WASM/Rust and vice versus. Next, we convert the
+JsRequest to a TideRequest. Again, this is handled by crate
+called [rora-tide-adapter](https://github.com/rora-rs/tide-adapter). The tide_request is passed to the app resulting in
+a tide_response. The tide_response is converted to a JsResponse and returned from the function.
+
+
+
 
 
 
