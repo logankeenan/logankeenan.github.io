@@ -1,4 +1,4 @@
-+++ 
++++
 title = "Running a Rust Server in-browser as an SPA"
 description = "Running a Rust server compiled to WASM in the browser as a single page application"
 date = 2022-02-19 
@@ -154,9 +154,25 @@ JsRequest to a TideRequest. Again, this is handled by crate
 called [rora-tide-adapter](https://github.com/rora-rs/tide-adapter). The tide_request is passed to the app resulting in
 a tide_response. The tide_response is converted to a JsResponse and returned from the function.
 
+We have our rust code, now we need to compile it to WASM and leverage wasm-bindgen to create the bindings between 
+JavaScript and WASM. I assume Rust is already installed, so we just need to install the WASM compile target
 
+```shell
+rustup target add wasm32-unknown-unknown
+```
 
+Install wasm-bindgen
+```shell
+cargo install -f wasm-bindgen-cli
+```
 
+Finally, lets compile to WASM and create the JavaScript bindings. We'll put the output in `/dist/wasm`.  Note, a release 
+build could be done by appending `--release` to the first command and pointing at the release target rather than debug 
+for wasm-bindgen.
+```shell
+cargo build --target wasm32-unknown-unknown
+wasm-bindgen target/wasm32-unknown-unknown/debug/notes_demo_spa.wasm --out-dir ./dist/wasm --target web
+```
 
 
 
