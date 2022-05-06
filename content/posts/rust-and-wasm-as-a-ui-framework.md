@@ -98,7 +98,7 @@ This is a paired down version of the actual app to show the basic setup of a Tid
 CRUD operations against a Note model using HTML forms. Check out repository if you're interested in server
 implementation.
 
-## The Rust Parts of the SPA
+## The Rust/WASM Parts
 
 We've got this server, so now we need to send requests to it. First, lets create another repository where the SPA code
 will live. We could have easily put all this in a single repository and not made two. However, I wanted to create a
@@ -173,6 +173,16 @@ for wasm-bindgen.
 cargo build --target wasm32-unknown-unknown
 wasm-bindgen target/wasm32-unknown-unknown/debug/notes_demo_spa.wasm --out-dir ./dist/wasm --target web
 ```
+
+## The JavaScript
+
+Now, we have a server that receives and responds to request.  It's compiled to WASM and can be called from JavaScript.  
+How can we send requests to our server?  How would a normal server rendered web app work? Clicking on anchor tags make
+GET requests to the href. Submitting forms make POST requests to the action with the form inputs serialized as the body.
+That's about it.  To call our server we just need to addEventListeners to those user actions, create our requests, and send
+them to our server. 
+
+What about the response? 
 
 
 
