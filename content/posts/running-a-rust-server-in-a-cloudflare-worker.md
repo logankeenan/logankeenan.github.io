@@ -1,11 +1,9 @@
-+++
-title = "Running a Rust Server in a Cloudflare Worker"
++++ title = "Running a Rust Server in a Cloudflare Worker"
 description = "Create a Rust server using the tide framework, compile it to WASM, and run it in a Cloudflare Worker."
-date = 2022-05-07T00:00:01Z
-+++
+date = 2022-05-07T00:00:01Z +++
 
-_Rust is extraordinarily portable. This post is the first of many describing how an app can be written in Rust as a
-server-side app and integrated into multiple platforms._
+_Rust is extraordinarily portable. This post is the first of many describing how a server-side app can be written in
+Rust and integrated into multiple platforms._
 
 ## Overview
 
@@ -22,7 +20,7 @@ Cloudflare [response](https://docs.rs/worker/0.0.9/worker/struct.Response.html),
 
 ## Creating the App
 
-We're going to create a small portion of a note taking app.The app uses
+We're going to create a small portion of a note taking app, rendering a list of notes.  The app uses
 an [API](https://github.com/rora-rs/notes-demo-api) to persists notes, makes calls to the API
 with [surf](https://github.com/http-rs/surf), and uses [askama](https://github.com/djc/askama/) for templating. Feel
 free to view the complete [source code](https://github.com/rora-rs/notes-demo) or try out
@@ -47,11 +45,91 @@ tide = { git = "https://github.com/logankeenan/tide.git", features = ["wasm"], b
 surf = { version = "2.3.2", default-features = false, features = ["wasm-client"] }
 ```
 
+Update the lib.rs to include a model that represents a note. 
+```rust
+use serde::{Deserialize, Serialize};
+#[derive(Deserialize, Serialize)]
+pub struct Note {
+    pub id: i32,
+    pub title: String,
+    // the note content can be rendered to markdown. See the source for more details
+    pub markdown: String,
+    pub update_at: Option<String>,
+    pub created_at: String,
+}
+```
+
+Create a file to render the markup in `notes-demo/template/notes/index.html`
+```html
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<style>
+    ul {
+        list-style: none;
+        padding: 0;
+    }
+
+    li {
+        font-size: 18px;
+        margin: 15px 0;
+    }
+</style>
+<nav>
+    <a href="/notes">Notes</a>
+    <a href="/notes/new">New Note</a>
+</nav>
+
+<h1>Notes</h1>
+<ul>
+    {% for note in notes %}
+    <li>
+        <a href="/notes/{{note.id}}">{{note.title}}</a>
+    </li>
+    {% endfor %}
+</ul>
+
+</body>
+</html>
+```
+
+Create the struct _bind_ the template
+
+```rust
+
+use askama::Template;
+#[derive(Template)]
+#[template(path = "notes/index.html")]
+pub struct IndexTemplate<'a> {
+    pub notes: &'a Vec<Note>,
+}
+```
 
 
-## Questions
+Now, lets create a route which will call the API for notes and render them to HTML.
 
-* **Can I use this today?**
+```rust
+use surf::Response as SurfResponse;
+use tide::{Request, Response, Server};
+pub async fn index(_: Request<()>) -> tide::Result {
+    let mut api_response: SurfResponse = surf::get(
+        "https://rora-notes-demo-api.herokuapp.com/notes"
+    ).await?;
 
-  Yes and no, I currently have a [PR](https://github.com/http-rs/tide/pull/877) to allow WASM support in tide. Feel free
-  to voice your support. For now, my tide [fork](https://github.com/logankeenan/tide) will work. 
+    let notes: Vec<Note> = api_response.body_json().await?;
+    let notes_template_model = IndexTemplate {
+        notes: &notes
+    };
+    let body = notes_template_model.render()?;
+
+    let response = Response::builder(200)
+        .body(body)
+        .build();
+    Ok(response)
+}
+```
+
+
