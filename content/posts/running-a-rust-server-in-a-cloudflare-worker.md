@@ -1,7 +1,7 @@
 +++
 title = "A Rust server-side app in a Cloudflare Worker"
 description = "Create a Rust server-side app using the Tide framework, compile it to WASM, and run it in a Cloudflare Worker."
-date = 2022-05-07T00:00:01Z
+date = 2022-05-21T00:00:01Z
 +++
 
 _Rust is extraordinarily portable. This post is the first of many describing how a Rust server-side app can be integrated with
