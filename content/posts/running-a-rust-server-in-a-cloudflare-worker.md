@@ -1,6 +1,6 @@
 +++
-title = "Running a Rust Server in a Cloudflare Worker"
-description = "Create a Rust server using the Tide framework, compile it to WASM, and run it in a Cloudflare Worker."
+title = "A Rust server-side app in a Cloudflare Worker"
+description = "Create a Rust server-side app using the Tide framework, compile it to WASM, and run it in a Cloudflare Worker."
 date = 2022-05-07T00:00:01Z
 +++
 
