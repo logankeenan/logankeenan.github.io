@@ -154,3 +154,50 @@ cargo build --target wasm32-unknown-unknown
 
 ## Integrating the App into a Cloudflare Worker
 
+Next, we need to create a Cloudflare worker which forward requests to our app and return the responses.
+
+Install [@cloudflare/wranger](https://github.com/cloudflare/wrangler) and create a new rust project.
+
+```shell
+npm i @cloudflare/wrangler -g
+wrangler generate notes-demo-cf-worker --type rust
+```
+
+Update the cargo.toml file with our notes-demo app and my tide fork
+```toml
+log = "0.4.17" # forcing a version of log due to conflicts
+notes-demo = { path = "../notes-demo" }
+tide = { git = "https://github.com/logankeenan/tide.git", features = ["wasm"], branch = "wasm", default-features = false }
+```
+
+Now lets update the lib.rs to convert the Cloudflare worker request to tide request.
+```rust
+// src/lib.rs
+use std::str::FromStr;
+use tide::http::{Method, Url, Request as TideRequest, Response as TideResponse};
+
+let method = Method::from_str(req.method().to_string().as_str()).unwrap();
+let url = Url::parse(req.url().unwrap().as_str()).unwrap();
+let tide_request = TideRequest::new(method, url);
+// add headers and body too
+```
+
+Create the app server and pass the tide request to it
+```rust
+// src/lib.rs
+
+let app_server = notes_demo::create();
+let mut tide_response: TideResponse = app_server.respond(tide_request).await.unwrap();
+```
+
+Convert the Tide response to a Cloudflare response and return the result.
+```rust
+// src/lib.rs
+
+let response = Response::from_html(tide_response.body_string().await.unwrap()).unwrap();
+let status_code: u16 = tide_response.status().to_string().parse().unwrap();
+let response = response.with_status(status_code);
+// add headers too
+
+return Ok(response);
+```
