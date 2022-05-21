@@ -1,31 +1,32 @@
-+++
-title = "Running a Rust Server in a Cloudflare Worker"
-description = "Create a Rust server using the tide framework, compile it to WASM, and run it in a Cloudflare Worker."
-date = 2022-05-07T00:00:01Z 
-+++
++++ title = "Running a Rust Server in a Cloudflare Worker"
+description = "Create a Rust server using the Tide framework, compile it to WASM, and run it in a Cloudflare Worker."
+date = 2022-05-07T00:00:01Z +++
 
-_Rust is extraordinarily portable. This post is the first of many describing how a server-side app can be written in
-Rust and integrated with multiple platforms._
+_Rust is extraordinarily portable. This post is the first of many describing Rust server-side app can be integrated with
+multiple platforms._
 
 ## Overview
 
-1. Create a Rust library which encapsulates the app as a [tide](https://github.com/http-rs/tide) server.
-2. Create a Cloudflare worker with [worker-rs](https://github.com/cloudflare/workers-rs) and integrate the app.
+* Create a Rust library which creates a [tide](https://github.com/http-rs/tide) server-side app. Note
+* Create a Cloudflare worker with [worker-rs](https://github.com/cloudflare/workers-rs) and integrate the app.
 
 So how does this work? When the Cloudflare worker receives
-a [request](https://docs.rs/worker/0.0.9/worker/struct.Request.html) it converts it to a
-tide [request](https://docs.rs/tide/latest/tide/struct.Request.html), creates the app server, passes the tide request to the
-app's [respond](https://docs.rs/tide/latest/tide/struct.Server.html#method.respond) function, convert the
-tide [response](https://docs.rs/tide/latest/tide/struct.Response.html) to a
-Cloudflare [response](https://docs.rs/worker/0.0.9/worker/struct.Response.html), and returns the response from the worker.
 
-You don't need to create a separate library for the app sever code, but I'll be referencing the next section in future 
-blog posts where I'll integrate the same app in different platforms. 
+1. The Cloudflare worker receives a [request](https://docs.rs/worker/0.0.9/worker/struct.Request.html)
+2. Convert the Cloudflare request into a Tide [request](https://docs.rs/tide/latest/tide/struct.Request.html)
+3. Create the server-side app and pass the Tide request via
+   the [respond](https://docs.rs/tide/latest/tide/struct.Server.html#method.respond) function
+4. Convert Tide [response](https://docs.rs/tide/latest/tide/struct.Response.html) to a
+   Cloudflare [response](https://docs.rs/worker/0.0.9/worker/struct.Response.html) and returns the response from the
+   worker.
+
+You don't need to create a separate library for the app code, but I'll be referencing the next section in future blog
+posts where I'll integrate the same app into various platforms.
 
 ## Creating the App
 
-We're going to create a small portion of a note taking app, rendering a list of notes.  The app uses
-an [API](https://github.com/rora-rs/notes-demo-api) to persists notes, makes calls to the API
+We're going to create a small portion of a note taking app. We'll create the root path which will render a list of
+notes. The app uses an [API](https://github.com/rora-rs/notes-demo-api) to persists notes, makes calls to the API
 with [surf](https://github.com/http-rs/surf), and uses [askama](https://github.com/djc/askama/) for templating. Feel
 free to view the complete [source code](https://github.com/rora-rs/notes-demo) or try out
 the [demo](https://notes-demo-cf-worker.logankeenan.workers.dev/).
@@ -36,7 +37,7 @@ Create a repo for the app.
 cargo new --lib notes-demo
 ```
 
-Update the dependencies in Cargo.toml. For now, we need to use my fork of tide to enable WASM. I have an
+Update the dependencies in Cargo.toml. For now, we need to use my fork of Tide to enable WASM. I have an
 open [PR](https://github.com/http-rs/tide/pull/877).
 
 ```toml
@@ -50,13 +51,15 @@ surf = { version = "2.3.2", default-features = false, features = ["wasm-client"]
 
 # This is needed for other non-wasm platforms
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-tide = {git = "https://github.com/logankeenan/tide.git", branch = "wasm" }
+tide = { git = "https://github.com/logankeenan/tide.git", branch = "wasm" }
 surf = { version = "2.3.2" }
 ```
 
-Update the lib.rs to include a model that represents a note. 
+Update the lib.rs to include a model that represents a note.
+
 ```rust
 use serde::{Deserialize, Serialize};
+
 #[derive(Deserialize, Serialize)]
 pub struct Note {
     pub id: i32,
@@ -69,6 +72,7 @@ pub struct Note {
 ```
 
 Create a file to render the markup in `notes-demo/template/notes/index.html`
+
 ```html
 <!doctype html>
 <html lang="en">
@@ -100,6 +104,7 @@ Create the struct to represent the model _bound_ to the template.
 // src/lib.rs
 
 use askama::Template;
+
 #[derive(Template)]
 #[template(path = "notes/index.html")]
 pub struct IndexTemplate<'a> {
@@ -107,14 +112,14 @@ pub struct IndexTemplate<'a> {
 }
 ```
 
-
-Now, lets create a route which will call the API for notes and render them to HTML.
+Now, lets create a route which will call the API for notes and render the result as HTML.
 
 ```rust
 // src/lib.rs
 
 use surf::Response as SurfResponse;
 use tide::{Request, Response, Server};
+
 pub async fn index(_: Request<()>) -> tide::Result {
     let mut api_response: SurfResponse = surf::get(
         "https://rora-notes-demo-api.herokuapp.com/notes"
@@ -133,8 +138,7 @@ pub async fn index(_: Request<()>) -> tide::Result {
 }
 ```
 
-Create a public function for our library to expose which will create our tide server with the index route 
-and return it.
+Create a public function which will create the Tide server with the index route and return it.
 
 ```rust
 // src/lib.rs
@@ -148,13 +152,14 @@ pub fn create() -> Server<()> {
 ```
 
 Finally, build the library.
+
 ```shell
 cargo build --target wasm32-unknown-unknown
 ```
 
 ## Integrating the App into a Cloudflare Worker
 
-Next, we need to create a Cloudflare worker which forward requests to our app and return the responses.
+Next, we need to create a Cloudflare worker which forwards requests to our app and return the responses.
 
 Install [@cloudflare/wranger](https://github.com/cloudflare/wrangler) and create a new rust project.
 
@@ -163,14 +168,16 @@ npm i @cloudflare/wrangler -g
 wrangler generate notes-demo-cf-worker --type rust
 ```
 
-Update the cargo.toml file with our notes-demo app and my tide fork
+Update the cargo.toml file with the local notes-demo app from above and my Tide fork.
+
 ```toml
 log = "0.4.17" # forcing a version of log due to conflicts
 notes-demo = { path = "../notes-demo" }
 tide = { git = "https://github.com/logankeenan/tide.git", features = ["wasm"], branch = "wasm", default-features = false }
 ```
 
-Now lets update the lib.rs to convert the Cloudflare worker request to tide request.
+Now lets update src/lib.rs to convert the Cloudflare worker request to Tide request.
+
 ```rust
 // src/lib.rs
 use std::str::FromStr;
@@ -182,7 +189,8 @@ let tide_request = TideRequest::new(method, url);
 // add headers and body too
 ```
 
-Create the app server and pass the tide request to it
+Create the app server and pass the Tide request to it
+
 ```rust
 // src/lib.rs
 
@@ -191,6 +199,7 @@ let mut tide_response: TideResponse = app_server.respond(tide_request).await.unw
 ```
 
 Convert the Tide response to a Cloudflare response and return the result.
+
 ```rust
 // src/lib.rs
 
@@ -201,3 +210,14 @@ let response = response.with_status(status_code);
 
 return Ok(response);
 ```
+
+Run the Cloudflare worker with `wrangler dev`. You should see some HTML with a Notes heading and a few links above it.
+This isn't the complete app, but you can try the [demo](https://notes-demo-cf-worker.logankeenan.workers.dev/) and
+view [source](https://github.com/rora-rs/notes-demo) for the complete app.
+
+## What's Next?
+
+It'd be pretty easy to create a much more complex app with all the perks of Rust and it's ecosystem. Since this just
+compiles to WASM, we could also run this app in the browser. I'll have another post on that. Integrating Cloudflare's
+recently [announced](https://blog.cloudflare.com/introducing-d1/) D1 SQL database would allow for a complete full-stack
+app. 
