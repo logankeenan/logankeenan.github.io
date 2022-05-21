@@ -1,31 +1,32 @@
-+++ title = "Running a Rust Server in a Cloudflare Worker"
++++
+title = "Running a Rust Server in a Cloudflare Worker"
 description = "Create a Rust server using the Tide framework, compile it to WASM, and run it in a Cloudflare Worker."
-date = 2022-05-07T00:00:01Z +++
+date = 2022-05-07T00:00:01Z
++++
 
-_Rust is extraordinarily portable. This post is the first of many describing Rust server-side app can be integrated with
+_Rust is extraordinarily portable. This post is the first of many describing how a Rust server-side app can be integrated with
 multiple platforms._
 
 ## Overview
 
-* Create a Rust library which creates a [tide](https://github.com/http-rs/tide) server-side app. Note
+* Create a Rust library which creates a [Tide](https://github.com/http-rs/tide) server-side app.
 * Create a Cloudflare worker with [worker-rs](https://github.com/cloudflare/workers-rs) and integrate the app.
 
-So how does this work? When the Cloudflare worker receives
+So how does this work? When a Cloudflare worker receives a [request](https://docs.rs/worker/0.0.9/worker/struct.Request.html) it will:
 
-1. The Cloudflare worker receives a [request](https://docs.rs/worker/0.0.9/worker/struct.Request.html)
-2. Convert the Cloudflare request into a Tide [request](https://docs.rs/tide/latest/tide/struct.Request.html)
-3. Create the server-side app and pass the Tide request via
+1. Convert the Cloudflare request into a Tide [request](https://docs.rs/tide/latest/tide/struct.Request.html)
+2. Create the server-side app and pass the Tide request via
    the [respond](https://docs.rs/tide/latest/tide/struct.Server.html#method.respond) function
-4. Convert Tide [response](https://docs.rs/tide/latest/tide/struct.Response.html) to a
-   Cloudflare [response](https://docs.rs/worker/0.0.9/worker/struct.Response.html) and returns the response from the
+3. Convert Tide [response](https://docs.rs/tide/latest/tide/struct.Response.html) to a
+   Cloudflare [response](https://docs.rs/worker/0.0.9/worker/struct.Response.html) and return the response from the
    worker.
 
-You don't need to create a separate library for the app code, but I'll be referencing the next section in future blog
+Note, you don't need to create a separate library for the app, but I'll be referencing the next section in future blog
 posts where I'll integrate the same app into various platforms.
 
 ## Creating the App
 
-We're going to create a small portion of a note taking app. We'll create the root path which will render a list of
+We're going to create a small portion of a note taking app. We'll create the index route which will render a list of
 notes. The app uses an [API](https://github.com/rora-rs/notes-demo-api) to persists notes, makes calls to the API
 with [surf](https://github.com/http-rs/surf), and uses [askama](https://github.com/djc/askama/) for templating. Feel
 free to view the complete [source code](https://github.com/rora-rs/notes-demo) or try out
@@ -37,10 +38,12 @@ Create a repo for the app.
 cargo new --lib notes-demo
 ```
 
-Update the dependencies in Cargo.toml. For now, we need to use my fork of Tide to enable WASM. I have an
+Update the Cargo.toml. For now, we need to use my fork of Tide to enable WASM. I have an
 open [PR](https://github.com/http-rs/tide/pull/877).
 
 ```toml
+edition = "2021"
+
 [dependencies]
 serde = "1.0.132"
 askama = "0.11.0"
@@ -98,7 +101,7 @@ Create a file to render the markup in `notes-demo/template/notes/index.html`
 </html>
 ```
 
-Create the struct to represent the model _bound_ to the template.
+Create a struct to represent the model _bound_ to the template.
 
 ```rust
 // src/lib.rs
@@ -168,9 +171,11 @@ npm i @cloudflare/wrangler -g
 wrangler generate notes-demo-cf-worker --type rust
 ```
 
-Update the cargo.toml file with the local notes-demo app from above and my Tide fork.
+Update the Cargo.toml file with the local notes-demo app from, my Tide fork, and the edition.
 
 ```toml
+edition = "2021"
+
 log = "0.4.17" # forcing a version of log due to conflicts
 notes-demo = { path = "../notes-demo" }
 tide = { git = "https://github.com/logankeenan/tide.git", features = ["wasm"], branch = "wasm", default-features = false }
