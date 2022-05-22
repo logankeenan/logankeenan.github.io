@@ -1,21 +1,21 @@
 +++
-title = "A Rust server-side app in a Cloudflare Worker"
-description = "Create a Rust server-side app using the Tide framework, compile it to WASM, and run it in a Cloudflare Worker."
+title = "A Rust app in a Cloudflare Worker"
+description = "Create a Rust app using the Tide framework, compile it to WASM, and run it in a Cloudflare Worker."
 date = 2022-05-21T00:00:01Z
 +++
 
-_Rust is extraordinarily portable. This post is the first of many describing how a Rust server-side app can be integrated with
+_Rust is extraordinarily portable. This post is the first of many describing how a Rust app can be integrated with
 multiple platforms._
 
 ## Overview
 
-* Create a Rust library which creates a [Tide](https://github.com/http-rs/tide) server-side app.
+* Create a Rust library which exports a [Tide](https://github.com/http-rs/tide) app.
 * Create a Cloudflare worker with [worker-rs](https://github.com/cloudflare/workers-rs) and integrate the app.
 
 So how does this work? When a Cloudflare worker receives a [request](https://docs.rs/worker/0.0.9/worker/struct.Request.html) it will:
 
 1. Convert the Cloudflare request into a Tide [request](https://docs.rs/tide/latest/tide/struct.Request.html)
-2. Create the server-side app and pass the Tide request via
+2. Create the Rust app and pass the Tide request via
    the [respond](https://docs.rs/tide/latest/tide/struct.Server.html#method.respond) function
 3. Convert Tide [response](https://docs.rs/tide/latest/tide/struct.Response.html) to a
    Cloudflare [response](https://docs.rs/worker/0.0.9/worker/struct.Response.html) and return the response from the
