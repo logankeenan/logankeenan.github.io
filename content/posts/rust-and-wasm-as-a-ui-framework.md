@@ -67,65 +67,90 @@ to wasm-bindgen, all we need to do is add a few macros to our structs and functi
 It'll generate the javascript code which allows us to interact with Rust compiled to Web Assembly through a Javascript
 API. It's awesome. Checkout the wasm-bindgen [docs](https://rustwasm.github.io/wasm-bindgen/) for more information.  Notice
 
+The body of our app function does it a few things.  It creates the notes_demo app, converts the JsRequest to a Tide 
+request, passes the Tide request to the app via the [respond](https://docs.rs/tide/latest/tide/struct.Server.html#method.respond)
+function, converts the Tide response to a JsResponse, and returns the JsResponse.
+
 ```rust
 use tide::http::{Request as TideRequest, Response as TideResponse};
 use wasm_bindgen::prelude::*;
 use tide::{Body, Middleware, Next, Request, Response};
 
+// We're also making the JsRequest and JsResponse public so we can use them in the browser 
 pub use rora_javascript_adapter::{JsRequest, JsResponse};
 
 #[wasm_bindgen]
 pub async fn app(js_request: JsRequest) -> JsResponse {
     let mut app = notes_demo::create();
 
-    let tide_request: TideRequest = tide_adapter::javascript::to_tide_request(js_request);
+    let tide_request: TideRequest = rora_tide_adapter::javascript::to_tide_request(js_request);
     let tide_response: TideResponse = app.respond(tide_request).await.unwrap();
 
-    tide_adapter::javascript::to_response(tide_response).await
+    rora_tide_adapter::javascript::to_response(tide_response).await
 }
 ```
 
-Let's unpack this because there's quite a bit going on. The app function takes a JsRequest as a parameter and returns a
-JsResponse. JsRequest and JsResponse come
-from [rora-javascript-adapter](https://docs.rs/rora-javascript-adapter/latest/rora_javascript_adapter/) which is a crate
-I created to make it easy to send HTTP messages from JavaScript to WASM/Rust and vice versus. Next, we convert the
-JsRequest to a TideRequest. Again, this is handled by crate
-called [rora-tide-adapter](https://github.com/rora-rs/tide-adapter). The tide_request is passed to the app resulting in
-a tide_response. The tide_response is converted to a JsResponse and returned from the function.
-
-We have our rust code, now we need to compile it to WASM and leverage wasm-bindgen to create the bindings between 
-JavaScript and WASM. I assume Rust is already installed, so we just need to install the WASM compile target
-
+Now we can compile our Rust code to WASM, so it'll run in the browser.  First, we need to install the WASM target for 
+Rust.
 ```shell
 rustup target add wasm32-unknown-unknown
 ```
 
-Install wasm-bindgen
+Next, install wasm-bindgen
 ```shell
 cargo install -f wasm-bindgen-cli
 ```
 
-Finally, lets compile to WASM and create the JavaScript bindings. We'll put the output in `/dist/wasm`.  Note, a release 
-build could be done by appending `--release` to the first command and pointing at the release target rather than debug 
-for wasm-bindgen.
+Finally, lets compile to WASM and create the JavaScript bindings. 
 ```shell
 cargo build --target wasm32-unknown-unknown
 wasm-bindgen target/wasm32-unknown-unknown/debug/notes_demo_spa.wasm --out-dir ./dist/wasm --target web
 ```
 
-## The JavaScript
+## The JavaScript Adapter
 
-Now, we have a server that receives and responds to request.  It's compiled to WASM and can be called from JavaScript.  
-How can we send requests to our server?  How would a normal server rendered web app work? Clicking on anchor tags make
-GET requests to the href. Submitting forms make POST requests to the action with the form inputs serialized as the body.
-That's about it.  To call our server we just need to addEventListeners to those user actions, create our requests, and send
-them to our server. 
+The JavaScript will be responsible for hijacking anchor tag clicks and form submissions.  We'll create our own HTTP
+request using JsRequest, pass it to the server, and then update the document with our response body.  There are other
+edge cases we need to account for like client-side routing or non-200 response codes, but that's beyond the scope of this 
+post.  Feel free to check out the source code of the [javascript-adapter](https://github.com/rora-rs/javascript-adapter/) 
+to learn more.
 
-What about the response? 
+Let's start by creating a new index.html page at the root of our project.  We'll start by calling init with the output
+of wasm-bindgen.  This is all just boilerplate code for wasm-bindgen to prepare our app before we can start invoking it. 
+Create a JsRequest using the current pages url, pass it to our app, and update the browser page with the response.
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+<script type="module">
+    import init, {app, JsRequest} from '../dist/wasm/notes_demo_spa.js'
 
+    (async () => {
+        const url = new URL('/dist/wasm/notes_demo_spa_bg.wasm', window.location.href);
+        await init(url);
 
+        const jsRequest = new JsRequest(window.location.href, "GET");
+        const response = await app(jsRequest);
 
+        document.documentElement.innerHTML = response.body;
+    })();
+</script>
+</body>
+</html>
+```
 
+Now, that we have our code in place. We can run any arbitrary http server to server our html, js, and wasm files.  I 
+like to use [basic-http-server](https://github.com/brson/basic-http-server) with port 4000. The page should render with 
+a Notes heading and a few links.  We only did part of the app, but you can check out the demo and [source](https://github.com/rora-rs/notes-demo-spa)
+to learn more.
+
+### The JavaScript Adapter Enhancements
+
+Our demo isn't that functional. It just renders one page, so I thought I'd talke a bit more about what it'd take
+to make this a fully functional app.
 
  
 
