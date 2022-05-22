@@ -4,6 +4,7 @@ base_url = "https://logankeenan.com"
 # Whether to automatically compile all Sass files in the sass directory
 compile_sass = false
 
+[markdown]
 # Whether to do syntax highlighting
 # Theme can be customised by setting the `highlight_theme` variable to a theme supported by Zola
 highlight_code = true
