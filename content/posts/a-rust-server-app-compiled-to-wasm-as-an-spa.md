@@ -50,7 +50,7 @@ and JsResponse. We can use them as structs in Rust or classes in JavaScript. The
 messages between the browser and our Rust App. The `rora-tide-adapter` is a library that helps convert our JsRequests to
 TideRequests and Tide responses to JsResponses. Checkout the source code for
 [rora-javascript-adapter](https://github.com/rora-rs/javascript-adapter) and
-[rora-tide-adapter](https://github.com/rora-rs/tide-adapter) to learn more.
+[rora-tide-adapter](https://github.com/rora-rs/tide-adapter) to learn more. Note, we have to use my fork of Tide to allow WASM support. I have an open [PR](https://github.com/http-rs/tide/pull/877).
 
 ```toml
 [lib]
