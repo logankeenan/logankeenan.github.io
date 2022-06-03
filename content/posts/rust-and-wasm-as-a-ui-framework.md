@@ -153,17 +153,21 @@ Create a JsRequest using the current pages url, pass it to our app, and update t
 ```
 
 Now that we have our code in place, we can run any arbitrary HTTP server to serve our HTML, JS, and WASM files. I like
-to use [basic-http-server](https://github.com/brson/basic-http-server). The page should render with a
-Notes heading and a few links. We only did part of the app, but you can check out the [source](https://github.com/rora-rs/notes-demo-spa)
+to use [basic-http-server](https://github.com/brson/basic-http-server). The page should render with a Notes heading and
+a few links. We only did part of the app, but you can check out the [source](https://github.com/rora-rs/notes-demo-spa)
 to learn more.
 
-### The JavaScript Adapter Enhancements
+Our example code isn't that functional. It just renders one page. We'd need to add some additional JavaScript to handle
+when anchor tags are clicked, forms are submitted, some client-side routing, and probably a few other edges cases.
+However, the majority of the app could be written in Rust and integrated with the browser with a fairly small amount of
+JavaScript.
 
-Our demo isn't that functional. It just renders one page, so I thought I'd talk a bit more about what it'd take to make
-this a fully functional app. 
+## Additional Thoughts
 
- 
-
-
-
-
+This pattern also allows for server-side rendering via a regular server or a Cloudflare worker and then running the app
+client-side after the initial page load.
+Both the [TTI](https://developer.mozilla.org/en-US/docs/Glossary/Time_to_interactive)
+and [LCP](https://developer.mozilla.org/en-US/docs/Web/API/LargestContentfulPaint) would be very low. The app doesn't
+need to do any [rehydration](https://en.wikipedia.org/wiki/Hydration_(web_development)) or execute any JS code before
+the user can interact with it. The client simply interacts with the server if the client-side code hasn't finished
+processing.
