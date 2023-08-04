@@ -4,57 +4,58 @@ description = "Explore how to build a client-side server using Rust and WebAssem
 date = 2023-08-02
 +++
 
-This blog post demonstrates how to leverage the simplicity of server-side patterns while enjoying the benefits of a
-client-side application, by using a Rust server on the client.
+This blog post demonstrates how to leverage the simplicity of server-side patterns while enjoying the benefits of
+client-side applications using a Rust server on the client.
 
 ## The Current State
 
-In a server-side application, HTML is delivered upon a page request. User interactions such as form
-submissions or link clicks prompt HTTP requests to the app, which then responds with HTML. This methodology has the
-advantage of a fast initial page load and arguably more straightforward development. However, the incurred latency from
-continuous server round-trips can degrade the user experience.
+In server-side applications, HTML is delivered upon a page request. User interactions, such as form submissions or link
+clicks, prompt HTTP requests to the app, which then responds with HTML. This methodology offers a fast initial page load
+and arguably more straightforward development. However, continuous server round-trips can degrade the user experience
+due to latency.
 
-On the other hand, a client-side application results in an improved user experience with
-snappier interactions due to the in-browser dynamic updates to the page. However, there are a few cons. The initial page
-load can be slow, performance implications executing lots of JavaScript, and the overall complexity is arguably higher.
+On the other hand, client-side applications improve user experience with snappier interactions due to dynamic updates
+within the browser. However, drawbacks include a potentially slow initial page load, performance implications from
+executing a large amount of JavaScript, and a higher overall complexity.
 
 ## A Server on the Client?
 
 The idea of running a server on the client might sound unusual. In essence, it means compiling a Rust server into
 WebAssembly, which can then be called directly in the browser. My
 Previous [solution](https://logankeenan.com/posts/a-rust-server-app-compiled-to-wasm-as-an-spa/) had its
-drawbacks, event hijacking, DOM updates, JS integration, and performance concerns. Then I came across Richard
+drawbacks, including event hijacking, DOM updates, JS integration, and performance concerns. Then, I discovered Richard
 Anaya's brilliant Wasm Service Worker [POC](https://github.com/richardanaya/wasm-service).
 
-Service workers, often utilized in offline web apps, intercept HTTP requests and cache responses. Instead of making new
-HTTP requests, subsequent requests access the cached response. In our case, instead of making an HTTP
-request to the network, we're going to call our Wasm app with the request, and return the response. The browser doesn't
-know any different and thinks it's communicating with a remote server.
+Service workers, often used in offline web apps, intercept HTTP requests and cache responses. Subsequent requests access
+the cached response instead of making new HTTP requests. In our case, we call our Wasm app with the request and return
+the response, so the browser thinks it's communicating with a remote server.
 
 This approach brings several advantages:
 
-- Enhances the user experience as code is executed client-side.
-- Boosts performance since operations run on a different thread.
-- Arguably simplifies development as you only have to manage the server app.
+- Enhances user experience with client-side code execution.
+- Boosts performance since operations run on a separate thread.
+- Simplifies development by only requiring management of the server app.
 
-Additionally, we experience faster initial page loads because the same Rust app server code can be used to render the
-initial page on the server. This means the user can interact with the page immediately and even before the client-side
-app has loaded, and if the client-side app still hasn't loaded, it will default to server-side rendering.
+We also experience faster initial page loads since the same Rust app server code can render the initial page on the
+server. This allows the user to interact with the page immediately, even before the client-side app has loaded,
+defaulting to server-side rendering if necessary.
 
-How can I make this interactive? Anchor tags and forms can go a long way, but for more
-dynamic interactions, you can do whatever you want. Integrate htmx, load your favorite JS framework, or go wild and use
-some vanilla JS. The browser thinks it's communicating with a server and rendering HTML, so you're not limited.
+## How to Make It Interactive
+
+Anchor tags and forms can provide interactivity, but for more dynamic interactions, you have options. Integrate htmx,
+load your favorite JS framework, or go wild with vanilla JS. The browser, thinking it communicates with a server and
+rendering
+HTML, imposes no limitations.
 
 ## The Proof of Concept
 
-I'm going to demonstrate this idea with Rust using the [Axum](https://github.com/tokio-rs/axum) framework, however, this
-could be done with any server framework
-that will compile to Wasm and called with an HTTP request. I created a basic note-taking app, it allows for create,
-read, update, and search. Check out the [Source Code & Demos](#source-code-demos)
+I will demonstrate this idea using the [Axum](https://github.com/tokio-rs/axum) framework and Rust. However, any server
+framework that compiles to Wasm and
+is callable with an HTTP request could achieve this. I created a basic note-taking app that allows for creation,
+reading, updating, and searching. You can check out the [Source Code & Demos](#source-code-demos).
 
-I created a Rust library which exposes a function called `create_app`. It creates the Axum router with routes, this
-encapsulates the entire app. A consumer of the library can create the app and pass it an HTTP request to receive an HTTP
-response. The `create_app` function allows the app be integrated in various platforms.
+I also created a Rust library that exposes a function called `create_app`. This function sets up the Axum router with
+routes and encapsulates the entire app, allowing integration across various platforms.
 
 ```rust
 pub fn create_app() -> Router {
@@ -71,7 +72,7 @@ pub fn create_app() -> Router {
 }
 ```
 
-Browser integration is done through a Rust library which will compile to Wasm and integrate with JavaScript
+Browser integration is done through a Rust library that compiles to Wasm and integrate with JavaScript
 using [wasm_bindgen](https://github.com/rustwasm/wasm-bindgen). The `app` function is called with a `wasm_request`, the
 `wasm_request` is converted to an Axum compatible request, the router is called with the request, the response is
 converted back to a `wasm_response`, and returned from the function to JavaScript. I
@@ -109,7 +110,7 @@ self.addEventListener('fetch', event => {
 });
 ```
 
-The same app can be integrated server-side so the first initial page load will be fast.
+The same app can be integrated server-side to ensure a fast first page load.
 
 ```rust
 #[tokio::main]
