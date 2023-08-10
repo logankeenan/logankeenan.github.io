@@ -40,6 +40,20 @@ We also experience faster initial page loads since the same Rust app server code
 server. This allows the user to interact with the page immediately, even before the client-side app has loaded,
 defaulting to server-side rendering if necessary.
 
+## How is this any different?
+
+Client-side applications often require developers to handle a multitude of considerations:
+
+* Routing and managing the History API for navigating between pages
+* Updating the Document Object Model (DOM) to reflect changes in the user interface
+* Managing application state across different page navigations
+* Recreating native browser features with JavaScript, such as maintaining the scroll position when navigating back to a
+  previous page
+* Adding or removing JavaScript event listeners and/or libraries as the user moves between pages
+
+In contrast, client-side server applications free developers from these concerns, as these aspects are handled directly
+by the browser itself. This allows for a more efficient and streamlined development process.
+
 ## How to Make It Interactive
 
 Anchor tags and forms can provide interactivity, but for more dynamic interactions, you have options. Integrate htmx,
