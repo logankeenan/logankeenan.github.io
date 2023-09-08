@@ -1,13 +1,13 @@
 +++
-title = "Deploy Your Rust Project to Digital Ocean (or Any Provider) in Minutes"
-description = "Learn how to quickly deploy a Rust project to Digital Ocean (or any provider) with this streamlined guide. Assuming a Rust project running on port 3000, this method demonstrates how Rust compiles to an executable binary, eliminating the need for Docker or Rust installation on the server, and likely bypassing the need for Nginx. Just compile, upload, and run. Note: This approach may miss some best practices for large-scale production deployment."
+title = "Deploy Your Rust Project to Any Hosting Provider in Minutes"
+description = "Learn how to quickly deploy a Rust project to any hosting provide (ex: Digital Ocean) with this streamlined guide. Assuming a Rust project running on port 3000, this method demonstrates how Rust compiles to an executable binary, eliminating the need for Docker or Rust installation on the server, and likely bypassing the need for Nginx. Just compile, upload, and run. Note: This approach may miss some best practices for large-scale production deployment."
 date = 2023-08-12
 +++
 
-In this post, I will show you the fastest way to deploy a Rust project to Digital Ocean. This guide assumes you already
-have a Rust project with a web server running on port 3000. The principles discussed here can also be applied to other
-hosting providers. Since Rust compiles to an executable binary, you don't need Docker or have to install Rust on the
-server, and you probably don't need Nginx either. Just compile, upload, and run.
+In this post, I will show you the fastest way to deploy a Rust project to any hosting provider. We'll focus on Digital
+Ocean, but The principles discussed here can also be applied to other hosting providers. This guide assumes you already
+have a Rust project with a web server running on port 3000. Since Rust compiles to an executable binary, you don't need
+Docker or have to install Rust on the server, and you probably don't need Nginx either. Just compile, upload, and run.
 
 ## Objective:
 
@@ -17,11 +17,11 @@ building your project.
 
 ## Steps
 
-1. Create a Regular Droplet with Debian and SSH access. Nothing too powerful is required; Rust can go a long way on
+1. Create a Droplet with Debian and SSH access. Nothing too powerful is required; Rust can go a long way on
    modest resources.
 2. SSH into the box and clone your repository. If you don't need any files from your repository, you can skip this step.
    In this example, we'll call the app "my_app."
-3. Determine the architecture
+3. Determine the architecture so we know the correct compile target
    ```bash
    $ dpkg --print-architecture
    amd64
@@ -45,6 +45,7 @@ building your project.
    ```
 9. Expose port 3000 in the Droplet's firewall rules
    {{ resize_image(path="../static/images/digital-ocean-port-3000.png", alt="Allow port 3000 in a Digital Ocean droplet firewall rule") }}
+10. Visit the IP address or nameserver to verify it's working as expected.
 
 ## Update Script
 
@@ -64,4 +65,4 @@ ssh -f root@24.199.110.229 './root/my_app'
 ## Improvements
 
 While this method is a quick way to deploy an app and return to building, it is worth noting that it misses some
-best practices for deploying a production application designed for a large user base.
+best practices for deploying a production application.
