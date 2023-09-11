@@ -16,7 +16,7 @@ this, I've developed a straightforward proof-of-concept app using [Ditto](https:
   aspect-ratio: 16 / 9; /* Maintain the aspect ratio */
 }
 </style>   
-<iframe class="full-width-video" width="560" height="315" src="https://www.youtube.com/embed/fSqz5phCWU0?si=XFL3Az6fwIDwW7Bb" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+<iframe class="full-width-video" width="560" height="315" src="https://www.youtube.com/embed/hGB1pURveVU?si=tbhylv6fwstjBxHz" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
 
 ## What is Ditto?
 
