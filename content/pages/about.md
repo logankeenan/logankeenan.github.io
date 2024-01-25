@@ -14,7 +14,7 @@ distributed systems, and continuously expanding my knowledge.
 
 * **Startup Culture**: Gained an understanding of how a West Coast startup operates, from culture to work pace.
 * **Languages**: Acquired hands-on professional experience with Ruby on Rails and continued JavaScript experience.
-* **Data-Driven Development**: Mastered metrics and A/B testing to measure the effectiveness of new features.
+* **Data-Driven Development**: Metrics and A/B testing to measure effectiveness.
 
 **[Principal Financial](https://www.principal.com/)** (2020 - 2021)
 
@@ -26,8 +26,8 @@ distributed systems, and continuously expanding my knowledge.
 * **Entrepreneurial Skills**: Learned how to kickstart my own business from the ground up.
 * **Startup Success**: Built [thehummingbirds.co](https://www.thehummingbirds.co/)
   for [Emily Steele](https://www.emilyasteele.com/), who
-  later [secured](https://www.axios.com/local/des-moines/2023/01/11/hummingbirds-des-moines-business-investment) $1.2
-  million in funding.
+  raised [$1.2](https://www.axios.com/local/des-moines/2023/01/11/hummingbirds-des-moines-business-investment) and [$3.3](https://www.thehummingbirds.co/blog/seed-round-announcement)
+  million.
 * **Languages**: Self-taught and proficient with Ruby on Rails
 
 **[Hy-Vee](https://www.hy-vee.com/)** (2017 - 2018)
