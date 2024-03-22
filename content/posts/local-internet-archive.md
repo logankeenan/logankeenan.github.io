@@ -1,5 +1,5 @@
 +++
-title = "Local Internet Archive"
+title = "Local Internet Archive w/ Ditto"
 description = "Explore the Local Internet Archive, a proof-of-concept app that leverages Ditto's networking technology to save and share web content locally. Ideal for communities with limited internet access, this app serves as a localized internet resource."
 date = 2023-09-10
 +++
