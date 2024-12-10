@@ -30,7 +30,7 @@ left me with limited time to address the issues, leading to the difficult decisi
 [Website Source](https://github.com/logankeenan/positivelys-media)
 [Play Store](https://web.archive.org/web/20210713201115/https://play.google.com/store/apps/details?id=com.cultivatedsoftware.positivelys)
 [App Store](https://web.archive.org/web/20210713201052/https://apps.apple.com/us/app/positivelys/id1498984121)
-[App Source](https://github.com/logankeenan/positivelys)
+[App Source](https://github.com/logankeenan/positivelys-rust)
 
 <div>
 <div style="width: 50%; box-sizing: border-box; float: left;">
